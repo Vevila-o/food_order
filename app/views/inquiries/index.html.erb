@@ -1,6 +1,6 @@
 <% content_for :title, "已詢問 · Ruby Jam 訂餐助手" %>
 <% content_for :header do %>
-  <%= render PageHeaderComponent.new(title: "已詢問", subtitle: "歷史詢問單，共 #{@inquiries.size} 筆") %>
+  <%= render PageHeaderComponent.new(title: "已詢問", subtitle: "歷史詢問單，共 #{@inquiries.size} 筆", breadcrumb: [ [ "已詢問" ] ]) %>
 <% end %>
 
 <% if @inquiries.any? %>

@@ -1,7 +1,6 @@
 <% content_for :title, "#{@merchant.name} · Ruby Jam 訂餐助手" %>
 <% content_for :header do %>
-  <%= render(PageHeaderComponent.new(title: @merchant.name, subtitle: [ @merchant.district, @merchant.address ].compact_blank.join(" ").presence)) do |header| %>
-    <% header.with_back_link { render BackLinkComponent.new(label: "返回列表", href: merchants_path) } %>
+  <%= render(PageHeaderComponent.new(title: @merchant.name, subtitle: [ @merchant.district, @merchant.address ].compact_blank.join(" ").presence, breadcrumb: [ [ @merchant.name ] ])) do |header| %>
     <% header.with_actions do %>
       <%= render ToggleButtonComponent.new(merchant: @merchant, kind: :favorite) %>
       <%= render ToggleButtonComponent.new(merchant: @merchant, kind: :shortlist) %>

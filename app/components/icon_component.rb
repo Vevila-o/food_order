@@ -5,6 +5,7 @@ class IconComponent < ViewComponent::Base
   PATHS = {
     plus: "M12 5v14M5 12h14",
     chevron_left: "M15 5l-7 7 7 7",
+    chevron_right: "M9 5l7 7-7 7",
     external: "M7 17L17 7M8 7h9v9",
     star: "M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z",
     bookmark: "M6.5 3.5h11v17l-5.5-4-5.5 4z",

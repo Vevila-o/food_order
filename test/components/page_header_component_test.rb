@@ -14,14 +14,20 @@ class PageHeaderComponentTest < ViewComponent::TestCase
     assert_text "大安區 · 0.6 公里"
   end
 
-  test "slots：返回連結、右上角動作、summary" do
+  test "麵包屑：有給才顯示，首頁不給就沒有" do
+    render_inline(PageHeaderComponent.new(title: "標題", breadcrumb: [ [ "收藏" ] ]))
+    assert_selector "nav[aria-label=麵包屑] span[aria-current=page]", text: "收藏"
+
+    render_inline(PageHeaderComponent.new(title: "標題"))
+    assert_no_selector "nav[aria-label=麵包屑]"
+  end
+
+  test "slots：右上角動作、summary" do
     render_inline(PageHeaderComponent.new(title: "標題")) do |header|
-      header.with_back_link { "<a href='/'>返回</a>".html_safe }
       header.with_actions { "<button>動作</button>".html_safe }
       header.with_summary { "<p>摘要</p>".html_safe }
     end
 
-    assert_selector "a", text: "返回"
     assert_selector "button", text: "動作"
     assert_selector "p", text: "摘要"
   end

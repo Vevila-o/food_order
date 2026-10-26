@@ -1,0 +1,14 @@
+<nav aria-label="麵包屑" class="min-w-0 self-stretch">
+  <ol class="flex flex-wrap items-center gap-x-1 text-sm">
+    <% crumbs.each_with_index do |crumb, index| %>
+      <li class="flex min-w-0 items-center gap-1">
+        <% if index.positive? %><%= render IconComponent.new(name: :chevron_right, size: 14, class: "shrink-0 text-muted") %><% end %>
+        <% if index == crumbs.size - 1 %>
+          <span aria-current="page" class="truncate font-medium"><%= crumb.label %></span>
+        <% else %>
+          <%= link_to crumb.label, crumb.href, class: "inline-flex min-h-11 items-center truncate text-muted hover:underline" %>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+</nav>

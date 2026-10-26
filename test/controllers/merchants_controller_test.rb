@@ -467,9 +467,28 @@ class MerchantsControllerTest < ActionDispatch::IntegrationTest
     assert_select "section[aria-label=倒數計時]", count: 0
   end
 
-  test "其他頁面的頁首沒有 nav（只有首頁）" do
+  test "其他頁面的頁首沒有首頁導覽，只有麵包屑" do
     get history_path
 
-    assert_select "header nav", count: 0
+    assert_select "header nav[aria-label=首頁導覽]", count: 0
+    assert_select "header nav[aria-label=麵包屑]", count: 1
+  end
+
+  test "首頁沒有麵包屑" do
+    get root_path
+
+    assert_select "nav[aria-label=麵包屑]", count: 0
+  end
+
+  test "內頁的麵包屑：店家頁、編輯頁" do
+    merchant = create(:merchant, name: "阿嬤便當")
+
+    get merchant_path(merchant)
+    assert_select "nav[aria-label=麵包屑] li", count: 2
+    assert_select "nav[aria-label=麵包屑] span[aria-current=page]", text: "阿嬤便當"
+
+    get edit_merchant_path(merchant)
+    assert_select "nav[aria-label=麵包屑] a[href=?]", merchant_path(merchant), text: "阿嬤便當"
+    assert_select "nav[aria-label=麵包屑] span[aria-current=page]", text: "編輯"
   end
 end

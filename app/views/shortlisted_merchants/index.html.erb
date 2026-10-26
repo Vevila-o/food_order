@@ -2,7 +2,7 @@
 <%# 排序與儲存備註後重新導回這一頁：用 morph 更新並保留捲動位置，不會跳回頁首 %>
 <%= turbo_refreshes_with method: :morph, scroll: :preserve %>
 <% content_for :header do %>
-  <%= render PageHeaderComponent.new(title: "下次訂購", subtitle: "共 #{@merchants.size} 間，順序由你決定") %>
+  <%= render PageHeaderComponent.new(title: "下次訂購", subtitle: "共 #{@merchants.size} 間，順序由你決定", breadcrumb: [ [ "下次訂購" ] ]) %>
 <% end %>
 
 <% if @merchants.any? %>
