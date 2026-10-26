@@ -1,0 +1,25 @@
+<% content_for :title, "已詢問 · Ruby Jam 訂餐助手" %>
+<% content_for :header do %>
+  <%= render PageHeaderComponent.new(title: "已詢問", subtitle: "歷史詢問單，共 #{@inquiries.size} 筆") %>
+<% end %>
+
+<% if @inquiries.any? %>
+  <% status_tones = { "draft" => :base, "sent" => :soft, "confirmed" => :primary } %>
+  <% rows = @inquiries.map do |inquiry| %>
+    <% [
+      format_month(inquiry.event.held_on),
+      link_to(inquiry.merchant.name, merchant_path(inquiry.merchant), class: "underline-offset-2 hover:underline"),
+      render(PillComponent.new(tone: status_tones.fetch(inquiry.status))) { enum_text(inquiry, :status) },
+      enum_text(inquiry, :contacted_via) || "—",
+      "#{inquiry.headcount_at_creation} 人",
+      inquiry.total ? format_money(inquiry.total) : render(PillComponent.new(tone: :secondary)) { t("common.unknown_amount") },
+      l(inquiry.created_at.to_date, format: :long)
+    ] %>
+  <% end %>
+  <%= render DataTableComponent.new(headers: %w[活動 店家 狀態 管道 人數 預計金額 建立日期], rows: rows, caption: "已詢問的紀錄") %>
+<% else %>
+  <%= render(EmptyStateComponent.new(title: "還沒有詢問紀錄")) do |empty| %>
+    <% empty.with_action { link_to "去看看店家", merchants_path, class: "btn btn-primary" } %>
+    在店家頁產生詢問訊息後，就會記錄在這裡。
+  <% end %>
+<% end %>

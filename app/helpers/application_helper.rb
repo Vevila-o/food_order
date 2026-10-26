@@ -20,6 +20,11 @@ module ApplicationHelper
     date ? l(date.to_date, format: :long) : fallback
   end
 
+  # 「2026 年 10 月」：活動月份（詢問單、訂購紀錄用）
+  def format_month(date)
+    date ? "#{date.year} 年 #{date.month} 月" : t("common.not_filled")
+  end
+
   # 下拉選單的選項：[[中文, 值], ...]，文字取自 zh-TW.yml 的 enums
   def enum_options(model, attribute)
     model.public_send(attribute.to_s.pluralize).keys.map do |value|
