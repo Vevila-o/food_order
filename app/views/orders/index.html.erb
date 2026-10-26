@@ -7,7 +7,7 @@
   <% rows = @order_records.map do |record| %>
     <% [
       record.ordered_on ? l(record.ordered_on, format: :long) : "日期不明",
-      link_to(record.merchant.name, merchant_path(record.merchant), class: "underline-offset-2 hover:underline"),
+      link_to(record.merchant.name, merchant_path(record.merchant), class: "whitespace-normal underline-offset-2 hover:underline"),
       record.headcount ? "#{record.headcount} 人" : "—",
       record.total ? format_money(record.total) : "—",
       enum_text(record, :source),
