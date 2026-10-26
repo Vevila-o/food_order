@@ -106,7 +106,7 @@
       <% message_id = "inquiry-message-#{form.merchant.id}" %>
       <% suffix = two ? " · #{form.merchant.name}" : "" %>
       <% if sendable %>
-        <%= render MessagePreviewComponent.new(text: form.message, dom_id: message_id, title: "詢問訊息#{suffix}",
+        <%= render MessagePreviewComponent.new(text: form.message, dom_id: message_id, title: "詢問訊息#{suffix}", merchant_id: form.merchant.id, edited: form.message_edited?,
               notice: (@pair.event_passed? ? "活動日期 #{@event.held_on.strftime('%-m/%-d')} 已過，請確認日期再送出" : nil)) %>
       <% else %>
         <section class="rounded-2xl bg-base-100 p-4">

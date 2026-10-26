@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
-// 訂單詢問產生器：複製訊息 → 標為已詢問 → 開啟店家的聯絡管道、儲存草稿、挑選 / 重置搭配的另一家。
+// 訂單詢問產生器：複製訊息 → 標為已詢問 → 開啟店家的聯絡管道、儲存草稿、挑選 / 重置搭配的另一家、
+// 編輯訊息（鉛筆 → 文字框 → 完成才儲存）。手動改過的訊息會帶著 data-edited，之後每次儲存都一併送到伺服器。
 //
 // 順序很重要（iOS Safari）：
 //   1. 在點擊事件裡「同步」呼叫 navigator.clipboard.writeText（等它完成才跳轉）
@@ -91,6 +92,72 @@ export default class extends Controller {
     window.Turbo ? window.Turbo.visit(url, { action: "replace" }) : (window.location.href = url)
   }
 
+  // 只複製（不標記已詢問、不跳轉）
+  async copyOnly(event) {
+    const message = document.getElementById(event.params.messageId)
+    const status = this.statusNear(event.currentTarget)
+    if (this.pending) {
+      this.show(status, "金額更新中，請稍候再按一次")
+      return
+    }
+
+    if (await this.copy(message)) {
+      this.show(status, "已複製")
+    } else {
+      this.select(message)
+      this.show(status, "無法自動複製，已選取訊息，請長按後選「拷貝」")
+    }
+  }
+
+  // 鉛筆：預覽換成文字框，內容帶入目前的訊息
+  editMessage(event) {
+    const { message, editor, textarea, toolbar } = this.partsOf(event.params.messageId)
+    textarea.value = message.textContent
+    message.hidden = true
+    toolbar.hidden = true
+    editor.hidden = false
+    textarea.focus()
+  }
+
+  cancelEdit(event) {
+    this.closeEditor(event.params.messageId)
+  }
+
+  // 完成：把文字框的內容放回預覽並儲存（改了品項或數量，伺服器會重新產生訊息）
+  async finishEdit(event) {
+    const { message, textarea } = this.partsOf(event.params.messageId)
+    const status = this.statusNear(event.currentTarget)
+    const text = textarea.value.replace(/\r\n/g, "\n").trim()
+    if (!text) {
+      this.show(status, "訊息不能是空的")
+      return
+    }
+
+    message.textContent = text
+    message.dataset.edited = ""
+    this.closeEditor(event.params.messageId)
+    try {
+      const response = await this.save(null, null)
+      const data = await response.json()
+      this.show(status, response.ok ? "已儲存訊息" : (data.errors || ["儲存失敗"]).join("、"))
+    } catch {
+      this.show(status, "儲存失敗，請稍後再試（編輯的內容還在畫面上）")
+    }
+  }
+
+  closeEditor(messageId) {
+    const { message, editor, toolbar } = this.partsOf(messageId)
+    editor.hidden = true
+    toolbar.hidden = false
+    message.hidden = false
+  }
+
+  partsOf(messageId) {
+    const message = document.getElementById(messageId)
+    const section = message.closest("section")
+    return { message, section, editor: section.querySelector("[data-message-editor]"), textarea: section.querySelector("textarea"), toolbar: section.querySelector("[data-message-toolbar]") }
+  }
+
   async copy(element) {
     try {
       await navigator.clipboard.writeText(element.textContent)
@@ -113,6 +180,10 @@ export default class extends Controller {
     const body = new FormData(this.formTarget)
     if (channel) body.set("channel", channel)
     if (merchantId) body.set("contact_merchant_id", merchantId)
+    // 手動改過的訊息一併送出，伺服器存成這張詢問單的訊息（複製出去的就是存的）
+    document.querySelectorAll("pre[data-inquiry-message][data-edited][data-merchant-id]").forEach((pre) => {
+      body.set(`message_edits[${pre.dataset.merchantId}]`, pre.textContent)
+    })
 
     return fetch(this.saveUrlValue, {
       method: "POST",

@@ -1,7 +1,7 @@
 <header class="border-b border-base-300 bg-base-100">
   <div class="page-container flex flex-col gap-3 pt-3 pb-4 md:pt-5">
     <%= back_link if back_link? %>
-    <div class="flex items-start gap-1">
+    <%= content_tag(@nav_label ? :nav : :div, class: "flex items-start gap-1", "aria-label": @nav_label) do %>
       <%# 手機的選單按鈕（開側欄抽屜，由 layout 的 dialog controller 處理）；桌機側欄一直在，不需要 %>
       <button type="button" class="tap-target -ml-3 inline-flex size-11 shrink-0 items-center justify-center rounded-full md:hidden" aria-label="開啟選單" data-action="dialog#open">
         <%= render IconComponent.new(name: :menu, size: 22) %>
@@ -14,7 +14,7 @@
         </div>
         <% if actions? %><div class="flex shrink-0 items-center gap-2"><%= actions %></div><% end %>
       </div>
-    </div>
+    <% end %>
     <%= summary if summary? %>
   </div>
 </header>

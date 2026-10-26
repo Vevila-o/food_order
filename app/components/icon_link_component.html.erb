@@ -1,1 +1,4 @@
-<a href="<%= @href %>" aria-label="<%= @label %>" class="<%= css_class %>"><%= render IconComponent.new(name: @icon, size: 22) %></a>
+<a href="<%= href %>" aria-label="<%= label %>" class="<%= css_class %>">
+  <%= render IconComponent.new(name: @icon, size: 22) %>
+  <% if show_label? %><span class="hidden text-sm font-medium md:inline" aria-hidden="true"><%= label %></span><% end %>
+</a>

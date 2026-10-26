@@ -11,6 +11,8 @@ class IconComponent < ViewComponent::Base
     menu: "M4 6h16M4 12h16M4 18h16",
     close: "M6 6l12 12M18 6L6 18",
     trash: "M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12M9 7V4h6v3",
+    pencil: "M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4",
+    copy: "M9 9h10v10H9zM5 15V5h10",
     check: "M5 12.5l4.5 4.5L19 7.5",
     home: "M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",
     history: "M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z",

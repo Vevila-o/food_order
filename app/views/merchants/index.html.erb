@@ -1,11 +1,19 @@
 <% content_for :title, "店家 · Ruby Jam 訂餐助手" %>
 <% content_for :header do %>
-  <%= render(PageHeaderComponent.new(title: "找今晚的餐", eyebrow: "Ruby Jam 訂餐助手")) do |header| %>
+  <%# 頁首導覽：品牌、頁面標題、設定與新增店家都放在 nav 裡；下方是活動摘要卡（置中）與倒數卡 %>
+  <%= render(PageHeaderComponent.new(title: "找今晚的餐", eyebrow: "Ruby Jam 訂餐助手", nav_label: "首頁導覽")) do |header| %>
     <% header.with_actions do %>
-      <%= render IconLinkComponent.new(icon: :settings, label: "設定", href: edit_setting_path, variant: :plain) %>
-      <%= render IconLinkComponent.new(icon: :plus, label: "新增店家", href: new_merchant_path) %>
+      <%= render IconLinkComponent.new(icon: :settings, label: "設定", href: edit_setting_path, variant: :plain, show_label: true) %>
+      <%= render IconLinkComponent.new(icon: :plus, label: "新增店家", href: new_merchant_path, show_label: true) %>
     <% end %>
-    <% header.with_summary { render EventSummaryComponent.new(event: @event, edit_href: edit_event_path(@event)) } if @event %>
+    <% if @event %>
+      <% header.with_summary do %>
+        <div class="flex flex-col items-stretch gap-3 md:flex-row md:justify-center">
+          <%= render EventSummaryComponent.new(event: @event, edit_href: edit_event_path(@event)) %>
+          <%= render CountdownCardComponent.new(event: @event, edit_href: edit_event_path(@event)) %>
+        </div>
+      <% end %>
+    <% end %>
   <% end %>
 <% end %>
 
