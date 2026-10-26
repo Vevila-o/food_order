@@ -107,6 +107,7 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 - **Stimulus**（`app/javascript/controllers`）：`stepper`（數量 −／＋／＝ 人數，改值後送出會冒泡的 `input` 事件）、`inquiry`（產生器：複製 → 標記 → 跳轉、儲存草稿）、`dismissible`（關掉提示框）、`nested-form`（動態新增 / 移除巢狀列）、`auto-submit`（篩選膠囊變更即送出）、`dialog`（「更多篩選」抽屜）、`filter-count`（「更多篩選」按鈕的條件數，按鈕在 Turbo Frame 外所以由前端即時更新）。店家卡片連結一律在同一個分頁換網址（不開新分頁；使用者 2026-10 要求，推翻規格書「桌機開新分頁」），所以沒有 `detail-link`。
 - **產生器的複製與跳轉順序（iOS Safari）**：在點擊事件裡先 `await navigator.clipboard.writeText`（同步呼叫），成功才 `fetch(..., { keepalive: true })` 標為已詢問（**不 await**、帶 `X-CSRF-Token`），最後 `window.location.href`。複製失敗不跳轉、不標記，反白訊息供手動複製；金額更新中（表單剛有輸入、Turbo Frame 還沒回來，最多 3 秒）不讓複製，避免複製到舊訊息。剪貼簿需要 https 或 localhost。iPhone 真機行為仍待實測。
 - **Turbo Frame**：首頁列表在 `turbo-frame#merchant-list`，篩選表單 `data-turbo-frame` 指向它並 `turbo_action: advance` 更新網址；frame 內的連結要加 `data-turbo-frame="_top"` 才會跳出 frame。
+- **店家卡片的「查看菜單與建議搭配」**：固定在卡片左下角（`mt-auto`），箭頭是 `IconComponent` 的 `arrow_right`；卡片（`group/card`）被滑鼠移到或連結取得鍵盤焦點時，箭頭用 `cubic-bezier(0.34, 1.56, 0.64, 1)` 向右滑 8px（會微微過衝再回彈），`prefers-reduced-motion` 時不動畫。Tailwind v4 的 `translate-x-*` 是 CSS `translate` 屬性不是 `transform`，驗證時讀 `getComputedStyle(...).translate`。
 - **CSP**：不可使用 inline `style="..."`（`style-src 'self'`），要用 Tailwind class（例如 `pb-[calc(0.5rem+env(safe-area-inset-bottom))]`）。
 - **ViewComponent + Lookbook**：開發環境開 http://localhost:3000/lookbook 預覽所有元件（Lookbook 只裝在 development 群組，正式環境沒有；其介面需要 inline script，所以只對 Lookbook 自己的 controller 關閉 CSP，見 `config/initializers/lookbook.rb`）。
 - **ViewComponent 陷阱**：在 ERB 或預覽裡傳 block 要寫 `render(MyComponent.new(...)) { "內容" }`；寫成 `render MyComponent.new(...) { "內容" }` 時大括號會綁到 `new`，內容會默默變成空的。元件裡用 route / 自訂 helper 要加 `helpers.`（例如 `helpers.merchant_path(m)`、`helpers.format_money(n)`）。
@@ -165,8 +166,7 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 | 階段 | 內容 | 狀態 |
 | --- | --- | --- |
 | M1 骨架 | Rails、Docker、GitHub Actions、存取保護、daisyUI theme | 完成（Docker image 尚未實際 build 驗證） |
-| M2 商家與訂單 | a 資料模型、b 店家 CRUD / 貼上菜單 / 列表篩選 / 收藏候選 / 設計稿樣式、側欄、d 活動與收餐設定頁 + 訂單詢問產生器、f 兩家配對訂購、已詢問頁訂購按鈕（以上已合併）；e 手動補登與「上次剛訂過」、c 候選名單排序與備註（PR 中）。不含地圖 | 即將完成 |
-| M2 商家與訂單 | a 資料模型、b 店家 CRUD / 貼上菜單 / 列表篩選 / 收藏候選 / 設計稿樣式（以上已合併）、側欄（瀏覽歷史、收藏、已詢問、已訂購頁面，已合併）、d1 活動與收餐設定頁（已合併）；待做：c 候選名單頁（排序、備註）、d2 訂單詢問產生器（已合併）、f 兩家配對訂購（進行中）、e 手動補登與「上次剛訂過」提示、已詢問頁的訂購按鈕（進行中）。不含地圖 | 進行中 |
+| M2 商家與訂單 | a 資料模型、b 店家 CRUD / 貼上菜單 / 列表篩選 / 收藏候選 / 設計稿樣式、側欄、c 候選名單排序與備註、d 活動與收餐設定頁 + 訂單詢問產生器、e 手動補登與「上次剛訂過」、f 兩家配對訂購、已詢問頁訂購按鈕（以上皆已合併）。不含地圖 | 完成 |
 | M3 人數與日期 | KKTIX Webhook、總預算、人數變動提示、Ruby Jam 日期倒數 | 未開始 |
 | M4 AI | 菜單照片 / 網址解析、建議搭配。已決定：用 OpenAI 視覺模型（`OPENAI_API_KEY`）；上傳的圖片只在記憶體處理、辨識完不保留（不用 ActiveStorage）；辨識結果沿用「貼上菜單」的預覽 → 確認才寫入，價格一定要人確認；排在 M2-d2 之後 | 未開始 |
 | M5 自動搜尋 | Google Places、網頁搜尋、Threads、Instagram、每日排程與地圖 | 未開始 |

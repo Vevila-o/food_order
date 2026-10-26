@@ -114,6 +114,15 @@ class MerchantCardComponentTest < ViewComponent::TestCase
     assert_selector "button[aria-label=下次候選][aria-pressed=true]"
   end
 
+  test "查看菜單連結在卡片左下角，箭頭是裝飾並在卡片 hover / 聚焦時滑動" do
+    render_inline(MerchantCardComponent.new(merchant: build_stubbed(:merchant)))
+
+    assert_selector "article.group\\/card > a.mt-auto.self-start", text: "查看菜單與建議搭配"
+    assert_selector "a.mt-auto span.group-hover\\/card\\:translate-x-2 svg[aria-hidden=true]"
+    assert_selector "a.mt-auto span.group-focus-within\\/card\\:translate-x-2"
+    assert_selector "a.mt-auto span.motion-reduce\\:transition-none"
+  end
+
   test "店名會被跳脫" do
     render_card(create(:merchant, name: "<img src=x onerror=alert(1)>"))
 

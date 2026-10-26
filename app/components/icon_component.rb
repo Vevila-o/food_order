@@ -12,6 +12,7 @@ class IconComponent < ViewComponent::Base
     close: "M6 6l12 12M18 6L6 18",
     arrow_up: "M12 19V5M6 11l6-6 6 6",
     arrow_down: "M12 5v14M6 13l6 6 6-6",
+    arrow_right: "M5 12h14M13 6l6 6-6 6",
     trash: "M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12M9 7V4h6v3",
     pencil: "M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4",
     copy: "M9 9h10v10H9zM5 15V5h10",
