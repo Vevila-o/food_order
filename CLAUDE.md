@@ -88,6 +88,7 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 - `app/services/menu_text_parser.rb`、`app/models/menu_import.rb` — 貼上菜單：解析 → 預覽 → 確認才寫入（確認時重新解析）
 - `app/controllers/merchants/` — 收藏 / 下次候選：`POST` 加入、`DELETE` 移除（冪等），Turbo Stream 只替換被按的 `ToggleButtonComponent`，沒有 JavaScript 時 redirect 回原頁。`Merchant#favorite!` / `add_to_shortlist!` / `remove_from_shortlist!` 用 `update_columns`：**不算更新店家，不改 `updated_at`**（列表依最近更新排序，按收藏不該讓順序跳動）；加入候選排在最後（最大位置 + 1），移出時清掉位置但保留備註。
 - **側欄**（`SidebarComponent`）：全部店家 / 瀏覽歷史 / 收藏 / 下次訂購 / 已詢問 / 已訂購。桌機固定在左側，手機由頁首左上角選單開出 `modal-start` 抽屜（layout 外層的 `dialog` controller）；數量來自 `ApplicationHelper#sidebar_counts`（每個請求 5 次 COUNT）。對應頁面：`BrowsingHistoriesController`（`/history`）、`FavoriteMerchantsController`（`/favorites`，重用 `MerchantFilter`）、`ShortlistedMerchantsController`（`/shortlist`，下次候選的店家，依加入順序 `Merchant.shortlisted`，不套收藏優先排序；排序調整與備註在 M2-c）、`InquiriesController`（`/inquiries`）、`OrdersController`（`/orders`）。已詢問、已訂購用 `DataTableComponent`：桌機表格、手機每筆一張卡片（格子的文字會跳脫，要放連結 / 標籤請傳 html_safe）。
+- **活動與設定（M2-d1）**：`EventForm`（`app/models/event_form.rb`）是表單物件，把「活動日期 / KKTIX 代碼」與「手動修正人數」包在同一個 transaction：人數不是 events 的欄位，有改才新增一筆 `registration_snapshots`（source: manual），保留修正紀錄；人數用字串接收再驗證 `\A\d{1,3}\z`（整數欄位會把「abc」默默轉成 nil）。日期改了而代碼 / 名稱還是舊日期自動產生的，會跟著重新產生；手動改過的不覆蓋。**活動日期已過、或不是週二都不擋**（下一場日期常常還不確定），只提醒。`SettingsController` 管 `AppSetting` 收餐資訊（名稱與地址至少填一個；收件人與電話選填，有填才寫進詢問訊息，會傳給每間店家）。活動不提供刪除（會連帶刪詢問單）。
 - `app/validators/` — 自訂驗證（`HttpsUrlValidator`：只允許 https、擋內網 IP）
 - `test/factories/` — FactoryBot 定義，測試用 `create(:merchant, :drink_only)` 建資料，不用 fixtures
 - `app/services/sources/` — 每個外部來源一個 service：`ThreadsSearch`、`InstagramHashtag`、`GooglePlaces`、`WebSearch`、`RubyJamSchedule`（`KktixMailParser` 第一版不做）。皆回傳同一種 `MerchantCandidate`，再由 `MerchantUpserter` 合併重複店家（電話、IG 帳號、座標）。
@@ -134,7 +135,7 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 - 複製按鈕：同一個 Stimulus click handler 內先 `navigator.clipboard.writeText`，成功顯示「已複製」再 `window.location.href` 開連結；失敗不跳轉，改為反白文字供手動複製。
 - **前端行為要在真實瀏覽器驗證**：請求測試看不到 Turbo / Stimulus 的行為（是否整頁重載、frame 更新、抽屜開關）。用 `script/screenshot.mjs` 同樣的 DevTools 協定，在頁面內執行腳本操作並檢查結果（2026-10 以此驗證過收藏、候選、篩選膠囊、抽屜、巢狀表單、店家連結的手機 / 桌機行為）。
 - **改畫面後要看實際截圖**：`node script/screenshot.mjs <網址> <輸出.png> 390 844 mobile`（會印出 scrollWidth / clientWidth，兩者不同就是橫向溢出）。測試抓不到版面問題（例如粗黑框、橫向溢出）。
-- 設計稿尚未涵蓋、由我們依其視覺語言補上的：曾訂購圓點、「僅飲料」標籤、新增店家入口（首頁右上角「＋」）、更多篩選抽屜。設計稿有但目前不做的：地圖（M5）、設定齒輪（M2-d）、「每日 06:00 更新」（M5）。
+- 設計稿尚未涵蓋、由我們依其視覺語言補上的：曾訂購圓點、「僅飲料」標籤、新增店家入口（首頁右上角「＋」）、更多篩選抽屜。設計稿有但目前不做的：地圖（M5）、「每日 06:00 更新」（M5）。設定齒輪（首頁右上角，連到 `/setting/edit`）已在 M2-d1 完成。
 
 ### 國際化
 
@@ -156,7 +157,7 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 | 階段 | 內容 | 狀態 |
 | --- | --- | --- |
 | M1 骨架 | Rails、Docker、GitHub Actions、存取保護、daisyUI theme | 完成（Docker image 尚未實際 build 驗證） |
-| M2 商家與訂單 | a 資料模型、b 店家 CRUD / 貼上菜單 / 列表篩選 / 收藏候選 / 設計稿樣式（以上已合併）、側欄（瀏覽歷史、收藏、已詢問、已訂購頁面，進行中）；待做：c 候選名單頁（排序、備註）、d 訂單詢問產生器與設定頁、e 詢問單確認訂購與補登紀錄的操作。不含地圖 | 進行中 |
+| M2 商家與訂單 | a 資料模型、b 店家 CRUD / 貼上菜單 / 列表篩選 / 收藏候選 / 設計稿樣式（以上已合併）、側欄（瀏覽歷史、收藏、已詢問、已訂購頁面，已合併）；待做：c 候選名單頁（排序、備註）、d1 活動與收餐設定頁（進行中）、d2 訂單詢問產生器、e 詢問單確認訂購與補登紀錄的操作。不含地圖 | 進行中 |
 | M3 人數與日期 | KKTIX Webhook、總預算、人數變動提示、Ruby Jam 日期倒數 | 未開始 |
 | M4 AI | 菜單照片 / 網址解析、建議搭配。已決定：用 OpenAI 視覺模型（`OPENAI_API_KEY`）；上傳的圖片只在記憶體處理、辨識完不保留（不用 ActiveStorage）；辨識結果沿用「貼上菜單」的預覽 → 確認才寫入，價格一定要人確認；排在 M2-d2 之後 | 未開始 |
 | M5 自動搜尋 | Google Places、網頁搜尋、Threads、Instagram、每日排程與地圖 | 未開始 |

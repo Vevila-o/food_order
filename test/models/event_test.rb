@@ -79,4 +79,15 @@ class EventTest < ActiveSupport::TestCase
       assert_equal latest, Event.current
     end
   end
+
+  test "default_date：今天起算的下一個週二（今天是週二就是今天）" do
+    assert_equal Date.new(2026, 10, 27), Event.default_date(Date.new(2026, 10, 22)) # 週四
+    assert_equal Date.new(2026, 10, 27), Event.default_date(Date.new(2026, 10, 27)) # 週二
+    assert_equal Date.new(2026, 11, 3), Event.default_date(Date.new(2026, 10, 28)) # 週三
+    assert_equal Date.new(2026, 10, 27), Event.default_date(Date.new(2026, 10, 25)) # 週日
+  end
+
+  test "title_for" do
+    assert_equal "Ruby Jam 2026 年 11 月", Event.title_for(Date.new(2026, 11, 24))
+  end
 end

@@ -1,13 +1,15 @@
 # 首頁頂部的活動摘要卡（設計稿）：下一場日期與送達時段、報名人數、總預算、「需調整訂餐」提示、KKTIX 後台連結。
-# 唯讀；人數目前是手動輸入（M2-d 設定頁），M3 起由 KKTIX Webhook 更新。
+# 人數目前是手動輸入（「修正人數」連到活動設定頁），M3 起由 KKTIX Webhook 更新。
 class EventSummaryComponent < ViewComponent::Base
-  def initialize(event:)
+  # edit_href：「修正人數」連結（沒給就不顯示，預覽與測試不需要路由）
+  def initialize(event:, edit_href: nil)
     @event = event
+    @edit_href = edit_href
     @headcount = event.headcount
     @inquiries = event.order_inquiries.to_a
   end
 
-  attr_reader :event, :headcount
+  attr_reader :event, :headcount, :edit_href
 
   # 「10/27（二）」
   def date_text = "#{event.held_on.month}/#{event.held_on.day}（#{event.weekday_label.delete_prefix('週')}）"

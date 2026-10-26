@@ -27,6 +27,10 @@ Rails.application.routes.draw do
     end
   end
 
+  # 活動（日期、手動修正人數）與收餐資訊設定
+  resources :events, only: %i[new create edit update]
+  resource :setting, only: %i[edit update]
+
   # 側欄：瀏覽歷史、收藏、已詢問、已訂購
   get "history", to: "browsing_histories#index", as: :history
   get "favorites", to: "favorite_merchants#index", as: :favorites

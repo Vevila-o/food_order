@@ -1,0 +1,37 @@
+<%= form_with model: form, url: url, class: "flex max-w-2xl flex-col gap-3.5" do |f| %>
+  <% if form.errors.any? %>
+    <%= render AlertComponent.new(type: :alert) do %>
+      <div>
+        <p class="font-medium">請修正以下問題：</p>
+        <ul class="list-disc pl-5">
+          <% form.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+  <% end %>
+
+  <fieldset class="rounded-2xl bg-base-100 p-4">
+    <legend class="float-left mb-3 w-full text-base font-bold">活動</legend>
+    <%= render FieldComponent.new(form: f, attribute: :held_on, required: true, hint: "Ruby Jam 通常在週二；下一場日期還不確定時，先填大概的日期，確定後再回來改") do %>
+      <%= f.date_field :held_on, class: "input w-full" %>
+    <% end %>
+    <%= render FieldComponent.new(form: f, attribute: :kktix_slug, hint: "留空會依日期自動產生（例如 rubyjam2611）。用來連到 KKTIX 後台") do %>
+      <%= f.text_field :kktix_slug, class: "input w-full", autocomplete: "off", autocapitalize: "none", spellcheck: "false" %>
+    <% end %>
+  </fieldset>
+
+  <fieldset class="rounded-2xl bg-base-100 p-4">
+    <legend class="float-left mb-1 w-full text-base font-bold">報名人數</legend>
+    <p class="mb-3 text-sm text-muted">目前先手動填寫，總預算 = 人數 × NT$100。人數有改動會記一筆修正紀錄；已建立的詢問單會提示「需調整訂餐」。</p>
+    <%= render FieldComponent.new(form: f, attribute: :headcount, label: "目前人數") do %>
+      <%= f.number_field :headcount, class: "input w-full", min: 0, max: 999, inputmode: "numeric" %>
+    <% end %>
+  </fieldset>
+
+  <div class="flex flex-wrap gap-2">
+    <%= f.submit submit_label, class: "btn btn-primary" %>
+    <%= link_to "取消", root_path, class: "btn btn-ghost" %>
+  </div>
+<% end %>
