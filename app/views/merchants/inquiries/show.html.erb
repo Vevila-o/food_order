@@ -1,0 +1,120 @@
+<% content_for :title, "訂單詢問 · #{@merchant.name} · Ruby Jam 訂餐助手" %>
+<% content_for :header do %>
+  <%= render(PageHeaderComponent.new(title: "訂單詢問", subtitle: @merchant.name)) do |header| %>
+    <% header.with_back_link { render BackLinkComponent.new(label: "返回店家", href: merchant_path(@merchant)) } %>
+    <% header.with_summary do %>
+      <div class="flex flex-wrap items-center gap-1.5">
+        <%= render(PillComponent.new(tone: :soft)) { "#{@event.held_on.month}/#{@event.held_on.day}（#{@event.weekday_label.delete_prefix('週')}）#{@event.delivery_window_label} 送達" } %>
+        <%= render(PillComponent.new(tone: :base)) { "#{@event.headcount} 人" } %>
+        <%= render(PillComponent.new(tone: :base)) { "總預算 #{format_money(@event.total_budget)}" } %>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>
+
+<div class="flex max-w-2xl flex-col gap-3.5" data-controller="inquiry"
+     data-inquiry-save-url-value="<%= merchant_inquiry_path(@merchant) %>"
+     data-action="turbo:frame-load->inquiry#ready">
+  <% if @form.event_passed? %>
+    <div data-controller="dismissible">
+      <%= render(AlertComponent.new(type: :alert)) do %>
+        <span class="flex flex-col gap-2">
+          <span>活動日期 <%= @event.held_on.strftime("%Y/%-m/%-d") %> 已過，要設定下一場嗎？</span>
+          <span class="flex flex-wrap gap-2">
+            <%= link_to "設定下一場", edit_event_path(@event), class: "btn btn-sm btn-primary" %>
+            <button type="button" class="btn btn-sm btn-ghost" data-action="dismissible#dismiss">先用這場繼續</button>
+          </span>
+        </span>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if @form.confirmed? %>
+    <%= render(AlertComponent.new(type: :alert)) { "這間店已確認訂購，不能再修改詢問單。" } %>
+  <% elsif @form.existing_inquiry %>
+    <p class="text-sm text-muted">這場活動已有這間店的詢問單：<strong><%= enum_text(@form.existing_inquiry, :status) %></strong>。重新儲存會覆蓋品項。</p>
+  <% end %>
+
+  <%# 數量表單：GET，改動就自動送出，結果更新在下方的 Turbo Frame（網址保留數量，可重新整理） %>
+  <%= form_with url: merchant_inquiry_path(@merchant), method: :get, class: "flex flex-col gap-3.5",
+        data: { controller: "auto-submit", inquiry_target: "form", turbo_frame: "inquiry-result", turbo_action: "replace",
+                action: "input->inquiry#markPending input->auto-submit#submit" } do %>
+    <section class="rounded-2xl bg-base-100 p-4">
+      <h2 class="mb-1 text-base font-bold">選餐點</h2>
+      <p class="mb-2 text-sm text-muted">只列出菜單在 4 個月內的項目。數量可以用 −／＋，或按「＝ 人數」一次設成 <%= @event.headcount %>。</p>
+
+      <% if @form.orderable_items.empty? %>
+        <p class="py-3">這間店目前沒有可選的餐點：菜單還沒有項目，或日期超過 4 個月。</p>
+      <% end %>
+
+      <% { food: "餐食", drink: "飲料" }.each do |category, title| %>
+        <% items = @form.orderable_items.select { |item| item.category.to_sym == category } %>
+        <% next if items.empty? %>
+        <fieldset class="mt-2">
+          <legend class="float-left mb-1 w-full text-sm font-bold text-muted"><%= title %></legend>
+          <ul class="clear-both divide-y divide-base-200">
+            <% items.each do |item| %>
+              <li class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-2.5">
+                <div class="min-w-0">
+                  <div class="font-medium"><%= item.name %></div>
+                  <div class="text-sm text-muted tabular-nums">
+                    <%= format_money(item.price) %><%= " / #{item.unit}" if item.unit.present? %>
+                    <% if item.servings %>· 可供 <%= item.servings %> 人<% end %>
+                  </div>
+                </div>
+                <%= render StepperComponent.new(name: "quantities[#{item.id}]", value: @form.quantity_for(item), label: item.name, headcount: @event.headcount) %>
+              </li>
+            <% end %>
+          </ul>
+        </fieldset>
+      <% end %>
+
+      <% if @form.unavailable_items.any? %>
+        <div class="mt-3 rounded-xl bg-base-200 p-3 text-sm">
+          <p class="mb-1 font-medium">這些項目不能選（菜單可能過期或日期不明）</p>
+          <ul class="text-muted">
+            <% @form.unavailable_items.each do |item| %>
+              <li class="flex flex-wrap items-center gap-1.5 py-0.5">
+                <span><%= item.name %></span>
+                <%= render FreshnessBadgeComponent.new(freshness: item.freshness) %>
+              </li>
+            <% end %>
+          </ul>
+          <%= link_to "到店家頁確認菜單", merchant_path(@merchant), class: "tap-target mt-1 inline-flex items-center font-medium underline" %>
+        </div>
+      <% end %>
+    </section>
+  <% end %>
+
+  <%= turbo_frame_tag "inquiry-result", class: "flex flex-col gap-3.5" do %>
+    <% if @form.visible_errors.any? %>
+      <%= render AlertComponent.new(type: :alert) do %>
+        <ul class="list-disc pl-5">
+          <% @form.visible_errors.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      <% end %>
+    <% end %>
+
+    <%= render BudgetSummaryComponent.new(pricing: @form.pricing, budget: @form.budget, others: @form.others, any_lines: @form.any_lines?) %>
+
+    <% sendable = @form.errors.empty? %>
+    <% if sendable %>
+      <%= render MessagePreviewComponent.new(text: @form.message,
+            notice: (@form.event_passed? ? "活動日期 #{@event.held_on.strftime('%-m/%-d')} 已過，請確認日期再送出" : nil)) %>
+    <% else %>
+      <section class="rounded-2xl bg-base-100 p-4">
+        <h2 class="mb-1 text-base font-bold">詢問訊息</h2>
+        <p class="text-sm text-muted">選好餐點後會在這裡產生訊息。</p>
+      </section>
+    <% end %>
+
+    <%= render ContactButtonsComponent.new(links: @merchant.contact_links, source_urls: @merchant.sources.map(&:url).compact_blank, disabled: !sendable) %>
+  <% end %>
+
+  <div class="flex flex-wrap gap-2 pb-6">
+    <button type="button" class="btn btn-ghost" data-action="inquiry#saveDraft">儲存草稿</button>
+    <%= link_to "返回店家", merchant_path(@merchant), class: "btn btn-ghost" %>
+  </div>
+</div>

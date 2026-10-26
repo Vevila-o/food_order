@@ -106,7 +106,7 @@ sqlite3 storage/production.sqlite3 ".backup 'backup-$(date +%Y%m%d).sqlite3'"
 | 階段 | 內容 | 狀態 |
 | --- | --- | --- |
 | M1 骨架 | Rails、Docker、GitHub Actions、存取保護、daisyUI theme | 完成 |
-| M2 商家與訂單 | 手動新增店家、卡片與篩選、收藏 / 候選、詳情頁、訂單詢問產生器 | 未開始 |
+| M2 商家與訂單 | 手動新增店家、卡片與篩選、收藏 / 候選、詳情頁、側欄、活動與收餐設定、訂單詢問產生器（進行中）；待做：候選排序、確認訂購與補登 | 進行中 |
 | M3 人數與日期 | KKTIX Webhook、總預算、人數變動提示、Ruby Jam 日期倒數 | 未開始 |
 | M4 AI | 菜單照片 / 網址解析、建議搭配 | 未開始 |
 | M5 自動搜尋 | Google Places、網頁搜尋、Threads、Instagram、每日排程與地圖 | 未開始 |

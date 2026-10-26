@@ -119,9 +119,14 @@
     <% end %>
   </section>
 
-  <div class="flex flex-wrap gap-3 pb-6">
+  <div class="flex flex-wrap gap-3">
     <%= link_to "編輯", edit_merchant_path(@merchant), class: "btn btn-primary" %>
     <%= button_to "刪除", merchant_path(@merchant), method: :delete, class: "btn btn-ghost",
           form: { data: { turbo_confirm: "確定要刪除「#{@merchant.name}」嗎？" } } %>
+  </div>
+
+  <%# 設計稿：底部固定的主要動作（產生器頁會檢查有沒有活動與人數，缺的話導到設定頁說明） %>
+  <div class="sticky bottom-0 -mx-5 border-t border-base-300 bg-base-100 px-5 py-3 md:mx-0 md:rounded-2xl md:border">
+    <%= link_to "訂單詢問產生器", merchant_inquiry_path(@merchant), class: "btn btn-primary w-full" %>
   </div>
 </div>
