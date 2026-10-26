@@ -34,6 +34,7 @@ Rails.application.routes.draw do
   # 側欄：瀏覽歷史、收藏、已詢問、已訂購
   get "history", to: "browsing_histories#index", as: :history
   get "favorites", to: "favorite_merchants#index", as: :favorites
+  get "shortlist", to: "shortlisted_merchants#index", as: :shortlist
   resources :inquiries, only: :index
   get "orders", to: "orders#index", as: :orders
 

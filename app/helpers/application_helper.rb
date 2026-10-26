@@ -38,6 +38,7 @@ module ApplicationHelper
     @sidebar_counts ||= {
       history: [ Merchant.where.not(last_viewed_at: nil).count, Merchant::HISTORY_LIMIT ].min,
       favorites: Merchant.where(favorited: true).count,
+      shortlist: Merchant.where(shortlisted: true).count,
       inquiries: OrderInquiry.count,
       orders: OrderRecord.count
     }

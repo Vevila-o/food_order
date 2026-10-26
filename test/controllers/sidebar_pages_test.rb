@@ -1,16 +1,16 @@
 require "test_helper"
 
-# 側欄與它連到的四個頁面：瀏覽歷史、收藏、已詢問、已訂購
+# 側欄與它連到的五個頁面：瀏覽歷史、收藏、下次訂購、已詢問、已訂購
 class SidebarPagesTest < ActionDispatch::IntegrationTest
   # --- 側欄本身（每一頁都有） ---
 
-  test "每個頁面都有桌機側欄與手機抽屜，各五個連結" do
-    [ root_path, history_path, favorites_path, inquiries_path, orders_path, new_merchant_path ].each do |path|
+  test "每個頁面都有桌機側欄與手機抽屜，各六個連結" do
+    [ root_path, history_path, favorites_path, shortlist_path, inquiries_path, orders_path, new_merchant_path ].each do |path|
       get path
 
       assert_response :success, path
-      assert_select "aside[aria-label=側欄] nav a", count: 5
-      assert_select "dialog.modal-start nav a", count: 5
+      assert_select "aside[aria-label=側欄] nav a", count: 6
+      assert_select "dialog.modal-start nav a", count: 6
       assert_select "dialog.modal-start button[aria-label=關閉選單]"
     end
   end
@@ -23,7 +23,7 @@ class SidebarPagesTest < ActionDispatch::IntegrationTest
   end
 
   test "目前頁面標示 aria-current" do
-    { history_path => "瀏覽歷史", favorites_path => "收藏", inquiries_path => "已詢問", orders_path => "已訂購", root_path => "全部店家" }.each do |path, label|
+    { history_path => "瀏覽歷史", favorites_path => "收藏", shortlist_path => "下次訂購", inquiries_path => "已詢問", orders_path => "已訂購", root_path => "全部店家" }.each do |path, label|
       get path
 
       assert_select "aside a[aria-current=page]", text: /#{label}/, count: 1
@@ -39,6 +39,7 @@ class SidebarPagesTest < ActionDispatch::IntegrationTest
   test "側欄顯示各項目的數量" do
     create(:merchant, favorited: true)
     create(:merchant, favorited: true)
+    create(:merchant, shortlisted: true, shortlist_position: 1)
     viewed = create(:merchant)
     viewed.record_view!
     create(:order_inquiry)
@@ -50,6 +51,7 @@ class SidebarPagesTest < ActionDispatch::IntegrationTest
 
     assert_select "aside a", text: /瀏覽歷史\s*1/
     assert_select "aside a", text: /收藏\s*2/
+    assert_select "aside a", text: /下次訂購\s*1/
     assert_select "aside a", text: /已詢問\s*1/
     assert_select "aside a", text: /已訂購\s*3/
   end
@@ -134,6 +136,27 @@ class SidebarPagesTest < ActionDispatch::IntegrationTest
 
     assert_select "p", text: "還沒有收藏的店家"
     assert_select "div", text: /星號/
+  end
+
+  # --- 下次訂購 ---
+
+  test "下次訂購：只列出下次候選的店家，依加入順序（不是收藏優先）" do
+    create(:merchant, name: "後加的", shortlisted: true, shortlist_position: 2, favorited: true)
+    create(:merchant, name: "先加的", shortlisted: true, shortlist_position: 1)
+    create(:merchant, name: "沒加入", favorited: true)
+
+    get shortlist_path
+
+    assert_select "h1", "下次訂購"
+    assert_equal %w[先加的 後加的], css_select("article h2 a").map(&:text)
+    assert_select "article button[aria-label=下次候選][aria-pressed=true]", count: 2
+  end
+
+  test "下次訂購沒有資料：說明怎麼加入" do
+    get shortlist_path
+
+    assert_select "p", text: "還沒有下次要訂的店家"
+    assert_select "div", text: /書籤/
   end
 
   # --- 已詢問 ---
@@ -252,9 +275,9 @@ class SidebarPagesTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "已設定帳密時，四個頁面都需要登入" do
+  test "已設定帳密時，五個頁面都需要登入" do
     with_env(AUTH_ENV) do
-      [ history_path, favorites_path, inquiries_path, orders_path ].each do |path|
+      [ history_path, favorites_path, shortlist_path, inquiries_path, orders_path ].each do |path|
         get path
         assert_response :unauthorized, "#{path} 應該需要登入"
       end
