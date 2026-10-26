@@ -3,7 +3,7 @@ require "test_helper"
 class PillComponentTest < ViewComponent::TestCase
   test "各種色調對應色票" do
     {
-      accent: "bg-accent", soft: "bg-soft", secondary: "bg-secondary",
+      accent: "bg-accent", soft: "bg-soft", secondary: "bg-secondary", primary: "bg-primary",
       warning: "bg-warning", base: "bg-base-200"
     }.each do |tone, css|
       render_inline(PillComponent.new(tone: tone)) { "文字" }

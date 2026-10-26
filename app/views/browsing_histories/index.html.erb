@@ -1,0 +1,17 @@
+<% content_for :title, "瀏覽歷史 · Ruby Jam 訂餐助手" %>
+<% content_for :header do %>
+  <%= render PageHeaderComponent.new(title: "瀏覽歷史", subtitle: "最近看過的店家（最多 #{Merchant::HISTORY_LIMIT} 間）") %>
+<% end %>
+
+<% if @merchants.any? %>
+  <div class="grid gap-3 md:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] md:gap-4">
+    <% @merchants.each do |merchant| %>
+      <%= render MerchantCardComponent.new(merchant: merchant) %>
+    <% end %>
+  </div>
+<% else %>
+  <%= render(EmptyStateComponent.new(title: "還沒有瀏覽紀錄")) do |empty| %>
+    <% empty.with_action { link_to "去看看店家", merchants_path, class: "btn btn-primary" } %>
+    打開任何一間店家的詳情頁，就會出現在這裡。
+  <% end %>
+<% end %>

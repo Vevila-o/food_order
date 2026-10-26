@@ -20,7 +20,9 @@ class SampleData
     guard_production!
     created = Merchant.transaction do
       merchants = merchant_definitions.map { |attrs| create_merchant(attrs) }.compact
-      create_event
+      current = create_event(held_on: Date.current.next_occurring(:tuesday), headcount: 18)
+      past = create_event(held_on: Date.current.prev_month.beginning_of_month.next_occurring(:tuesday) + 14, headcount: 16)
+      create_inquiries(current: current, past: past) if merchants.any?
       AppSetting.instance
       merchants
     end
@@ -56,12 +58,42 @@ class SampleData
     merchant
   end
 
-  def create_event
-    held_on = Date.current.next_occurring(:tuesday)
+  # 已存在同活動代碼的活動（可能是真實資料）就略過，回傳 nil
+  def create_event(held_on:, headcount:)
     return if Event.exists?(kktix_slug: Event.slug_for(held_on))
 
     event = Event.create!(held_on: held_on, title: "#{PREFIX}Ruby Jam #{held_on.year} 年 #{held_on.month} 月")
-    event.registration_snapshots.create!(headcount: 18, source: :manual)
+    event.registration_snapshots.create!(headcount: headcount, source: :manual)
+    event
+  end
+
+  # 側欄「已詢問」「已訂購」要有內容：過去一場一張已確認（同時產生訂購紀錄）、本場兩張（已按聯絡按鈕、草稿）
+  def create_inquiries(current:, past:)
+    if past
+      create_inquiry(past, "阿嬤便當", [ [ "雞腿飯", 16 ] ], status: :confirmed, via: :line, headcount: 16)
+    end
+    return unless current
+
+    create_inquiry(current, "綠光輕食", [ [ "雞肉沙拉", 18 ], [ "檸檬紅茶", 18 ] ], status: :sent, via: :instagram, headcount: 18)
+    create_inquiry(current, "大安涼飲批發", [ [ "鋁箔包紅茶（一箱 24 入）", 1 ] ], status: :draft, headcount: 18)
+  end
+
+  def create_inquiry(event, merchant_name, lines, status:, headcount:, via: nil)
+    merchant = Merchant.find_by(name: "#{PREFIX}#{merchant_name}")
+    return if merchant.nil? || OrderInquiry.exists?(event: event, merchant: merchant)
+
+    items = lines.map { |name, quantity| [ merchant.menu_items.find_by!(name: name), quantity ] }
+    pricing = OrderPricing.call(merchant: merchant, lines: items.map { |item, quantity| [ item.price, quantity ] })
+    inquiry = OrderInquiry.create!(
+      event: event, merchant: merchant, headcount_at_creation: headcount,
+      subtotal: pricing.subtotal, delivery_fee: pricing.delivery_fee, total: pricing.total
+    )
+    items.each do |item, quantity|
+      inquiry.items.create!(menu_item: item, name: item.name, unit: item.unit, quantity: quantity, unit_price: item.price)
+    end
+    inquiry.update!(contacted_via: via, sent_at: Time.current, status: :sent) if via
+    inquiry.confirm! if status == :confirmed
+    inquiry
   end
 
   def merchant_definitions

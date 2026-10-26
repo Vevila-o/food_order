@@ -76,6 +76,7 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 - 「曾訂購」圓點是**衍生值**（`merchant.order_records.any?`），不是欄位。詢問單 `confirm!` 會在 transaction 內建立 `order_records`（source: inquiry）；也可手動補登（source: manual）。有詢問單或訂購紀錄的店家不可刪除。
 - `Event` 的 `delivery_from` / `delivery_until` / `starts_at` 是 `time` 欄位，已關閉時區轉換（否則 19:00 會顯示成 03:00）。
 - KKTIX 活動代碼 `rubyjam{YY}{MM}`（rubyjam2610 = 2026 年 10 月），後台網址 `https://kktix.com/dashboard/events/{活動代碼}/attendees`。
+- **瀏覽歷史**：`merchants.last_viewed_at`，打開詳情頁時 `record_view!`（`update_column`，不改 `updated_at`）；一間店只記最後一次，`Merchant.recently_viewed` 取最近 20 間。**Turbo 會在滑鼠移到連結時預先載入頁面（`X-Sec-Purpose: prefetch`），那不算瀏覽**（`MerchantsController#prefetch_request?`）。
 - 座標（`lat`/`lng`）由 M5 自動搜尋取得，M2 可為 NULL；沒有座標就沒有距離，也沒有地圖（地圖移到 M5）。
 
 ### 非標準目錄
@@ -86,6 +87,7 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 - `app/services/merchant_filter.rb` — 首頁篩選與排序（網址 `filter[kinds][]`（可複選，OR）、`filter[sort]`、`filter[<旗標>]=1`）。規則：19:00 外送「待確認也顯示」；每人 ≤ NT$100「估價沒填仍顯示」；免外送費「只算外送費明確為 0 或滿額門檻 ≤ 本場預算，未知不算」；預設排序收藏優先再依最近更新。不認得的參數值一律忽略。controller 用 `params.permit(filter: [ :sort, *FLAGS, { kinds: [] } ])[:filter].to_h`（`fetch(:filter, {})` 的預設值會變成未 permit 的 Parameters 而報錯）。
 - `app/services/menu_text_parser.rb`、`app/models/menu_import.rb` — 貼上菜單：解析 → 預覽 → 確認才寫入（確認時重新解析）
 - `app/controllers/merchants/` — 收藏 / 下次候選：`POST` 加入、`DELETE` 移除（冪等），Turbo Stream 只替換被按的 `ToggleButtonComponent`，沒有 JavaScript 時 redirect 回原頁。`Merchant#favorite!` / `add_to_shortlist!` / `remove_from_shortlist!` 用 `update_columns`：**不算更新店家，不改 `updated_at`**（列表依最近更新排序，按收藏不該讓順序跳動）；加入候選排在最後（最大位置 + 1），移出時清掉位置但保留備註。
+- **側欄**（`SidebarComponent`）：全部店家 / 瀏覽歷史 / 收藏 / 已詢問 / 已訂購。桌機固定在左側，手機由頁首左上角選單開出 `modal-start` 抽屜（layout 外層的 `dialog` controller）；數量來自 `ApplicationHelper#sidebar_counts`（每個請求 4 次 COUNT）。對應頁面：`BrowsingHistoriesController`（`/history`）、`FavoriteMerchantsController`（`/favorites`，重用 `MerchantFilter`）、`InquiriesController`（`/inquiries`）、`OrdersController`（`/orders`）。已詢問、已訂購用 `DataTableComponent`：桌機表格、手機每筆一張卡片（格子的文字會跳脫，要放連結 / 標籤請傳 html_safe）。
 - `app/validators/` — 自訂驗證（`HttpsUrlValidator`：只允許 https、擋內網 IP）
 - `test/factories/` — FactoryBot 定義，測試用 `create(:merchant, :drink_only)` 建資料，不用 fixtures
 - `app/services/sources/` — 每個外部來源一個 service：`ThreadsSearch`、`InstagramHashtag`、`GooglePlaces`、`WebSearch`、`RubyJamSchedule`（`KktixMailParser` 第一版不做）。皆回傳同一種 `MerchantCandidate`，再由 `MerchantUpserter` 合併重複店家（電話、IG 帳號、座標）。
@@ -154,7 +156,7 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 | 階段 | 內容 | 狀態 |
 | --- | --- | --- |
 | M1 骨架 | Rails、Docker、GitHub Actions、存取保護、daisyUI theme | 完成（Docker image 尚未實際 build 驗證） |
-| M2 商家與訂單 | 分 5 個 PR：a 資料模型（進行中）、b 店家 CRUD 與列表、c 詳情頁與候選名單、d 訂單詢問產生器、e 歷史詢問與訂購紀錄。不含地圖 | 進行中 |
+| M2 商家與訂單 | a 資料模型、b 店家 CRUD / 貼上菜單 / 列表篩選 / 收藏候選 / 設計稿樣式（以上已合併）、側欄（瀏覽歷史、收藏、已詢問、已訂購頁面，進行中）；待做：c 候選名單頁（排序、備註）、d 訂單詢問產生器與設定頁、e 詢問單確認訂購與補登紀錄的操作。不含地圖 | 進行中 |
 | M3 人數與日期 | KKTIX Webhook、總預算、人數變動提示、Ruby Jam 日期倒數 | 未開始 |
 | M4 AI | 菜單照片 / 網址解析、建議搭配 | 未開始 |
 | M5 自動搜尋 | Google Places、網頁搜尋、Threads、Instagram、每日排程與地圖 | 未開始 |

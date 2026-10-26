@@ -81,6 +81,15 @@ class Merchant < ApplicationRecord
     (EARTH_RADIUS_KM * 2 * Math.asin(Math.sqrt(a))).round(2)
   end
 
+  # 瀏覽歷史（側欄）：最近看過的店家，最近的在前，最多 20 間
+  HISTORY_LIMIT = 20
+  scope :recently_viewed, -> { where.not(last_viewed_at: nil).order(last_viewed_at: :desc, id: :desc).limit(HISTORY_LIMIT) }
+
+  # 打開店家頁時記錄。跟收藏一樣不算「更新店家」，用 update_column：不改 updated_at、不跑驗證與 callback。
+  def record_view!(at: Time.current)
+    update_column(:last_viewed_at, at)
+  end
+
   # 收藏與下次候選是兩個獨立的開關。不算「更新店家」，所以用 update_columns：
   # 不改 updated_at（列表依最近更新排序，按一下收藏不該讓順序跳動），也不跑驗證。
   def favorite!(value = true)

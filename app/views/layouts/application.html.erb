@@ -24,11 +24,33 @@
   </head>
 
   <body class="bg-base-200 text-base-content min-h-dvh">
-    <%# 每頁自己決定頁首（PageHeaderComponent），用 content_for :header 放進來 %>
-    <%= yield :header %>
-    <main class="page-container py-4">
-      <%= render "shared/flash" %>
-      <%= yield %>
-    </main>
+    <%# 外層的 dialog controller 管手機的側欄抽屜（頁首的選單按鈕 dialog#open 開它） %>
+    <div data-controller="dialog">
+      <%# 每頁自己決定頁首（PageHeaderComponent），用 content_for :header 放進來 %>
+      <%= yield :header %>
+
+      <div class="page-container flex gap-6">
+        <aside class="hidden w-56 shrink-0 py-4 md:block" aria-label="側欄">
+          <%= render SidebarComponent.new(current_path: request.path, counts: sidebar_counts) %>
+        </aside>
+        <main class="min-w-0 flex-1 py-4">
+          <%= render "shared/flash" %>
+          <%= yield %>
+        </main>
+      </div>
+
+      <dialog class="modal modal-start md:hidden" data-dialog-target="dialog" aria-label="選單">
+        <div class="modal-box h-full max-h-none w-72 max-w-[85vw] rounded-none pt-[calc(1rem+env(safe-area-inset-top))]">
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-bold">Ruby Jam 訂餐助手</span>
+            <button type="button" class="tap-target -mr-2 inline-flex size-11 items-center justify-center rounded-full" aria-label="關閉選單" data-action="dialog#close">
+              <%= render IconComponent.new(name: :close, size: 22) %>
+            </button>
+          </div>
+          <%= render SidebarComponent.new(current_path: request.path, counts: sidebar_counts) %>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button aria-label="關閉選單">關閉</button></form>
+      </dialog>
+    </div>
   </body>
 </html>

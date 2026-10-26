@@ -20,10 +20,26 @@ module ApplicationHelper
     date ? l(date.to_date, format: :long) : fallback
   end
 
+  # 「2026 年 10 月」：活動月份（詢問單、訂購紀錄用）
+  def format_month(date)
+    date ? "#{date.year} 年 #{date.month} 月" : t("common.not_filled")
+  end
+
   # 下拉選單的選項：[[中文, 值], ...]，文字取自 zh-TW.yml 的 enums
   def enum_options(model, attribute)
     model.public_send(attribute.to_s.pluralize).keys.map do |value|
       [ t("enums.#{model.model_name.i18n_key}.#{attribute}.#{value}"), value ]
     end
+  end
+
+  # 側欄各項目旁的數量。每個請求只查一次。
+  # 瀏覽歷史最多顯示 Merchant::HISTORY_LIMIT 間，數量也以此為上限。
+  def sidebar_counts
+    @sidebar_counts ||= {
+      history: [ Merchant.where.not(last_viewed_at: nil).count, Merchant::HISTORY_LIMIT ].min,
+      favorites: Merchant.where(favorited: true).count,
+      inquiries: OrderInquiry.count,
+      orders: OrderRecord.count
+    }
   end
 end

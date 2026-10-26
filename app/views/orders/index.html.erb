@@ -1,0 +1,23 @@
+<% content_for :title, "已訂購 · Ruby Jam 訂餐助手" %>
+<% content_for :header do %>
+  <%= render PageHeaderComponent.new(title: "已訂購", subtitle: "歷史訂購紀錄，共 #{@order_records.size} 筆") %>
+<% end %>
+
+<% if @order_records.any? %>
+  <% rows = @order_records.map do |record| %>
+    <% [
+      record.ordered_on ? l(record.ordered_on, format: :long) : "日期不明",
+      link_to(record.merchant.name, merchant_path(record.merchant), class: "underline-offset-2 hover:underline"),
+      record.headcount ? "#{record.headcount} 人" : "—",
+      record.total ? format_money(record.total) : "—",
+      enum_text(record, :source),
+      record.note.presence || "—"
+    ] %>
+  <% end %>
+  <%= render DataTableComponent.new(headers: %w[日期 店家 人數 金額 來源 備註], rows: rows, caption: "已訂購的紀錄") %>
+<% else %>
+  <%= render(EmptyStateComponent.new(title: "還沒有訂購紀錄")) do |empty| %>
+    <% empty.with_action { link_to "去看看店家", merchants_path, class: "btn btn-primary" } %>
+    詢問單標為「已確認訂購」，或補登過去訂過的店家，就會記錄在這裡。
+  <% end %>
+<% end %>

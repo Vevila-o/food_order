@@ -145,6 +145,44 @@ class MerchantsControllerTest < ActionDispatch::IntegrationTest
     assert_select "section", text: /建議搭配/
   end
 
+  test "打開店家頁會記錄瀏覽時間" do
+    merchant = create(:merchant)
+    assert_nil merchant.last_viewed_at
+
+    get merchant_path(merchant)
+
+    assert_in_delta Time.current, merchant.reload.last_viewed_at, 5
+  end
+
+  test "Turbo 的預先載入（prefetch）不算瀏覽" do
+    merchant = create(:merchant)
+
+    get merchant_path(merchant), headers: { "X-Sec-Purpose" => "prefetch" }
+
+    assert_response :success
+    assert_nil merchant.reload.last_viewed_at
+  end
+
+  test "列表頁與編輯頁不算瀏覽" do
+    merchant = create(:merchant)
+
+    get merchants_path
+    get edit_merchant_path(merchant)
+
+    assert_nil merchant.reload.last_viewed_at
+  end
+
+  test "瀏覽店家不會改變列表的「最近更新」排序" do
+    older = create(:merchant, name: "較舊")
+    older.update_column(:updated_at, 2.days.ago)
+    newer = create(:merchant, name: "較新")
+
+    get merchant_path(older)
+    get merchants_path
+
+    assert_equal [ newer.name, older.name ], css_select("article h2 a").map(&:text)
+  end
+
   test "沒有任何聯絡方式時提示到來源網址查看" do
     get merchant_path(create(:merchant))
 

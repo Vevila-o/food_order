@@ -9,9 +9,9 @@ module Maintenance
 
       assert_equal 5, Merchant.count
       assert Merchant.pluck(:name).all? { |name| name.start_with?(SampleData::PREFIX) }
-      assert_equal 1, Event.count
-      assert_equal 18, Event.first.headcount
-      assert_equal "週二", Event.first.weekday_label
+      assert_equal 2, Event.count, "本場與過去一場"
+      assert_equal [ 16, 18 ], Event.all.map(&:headcount).sort
+      assert Event.all.all? { |event| event.weekday_label == "週二" }
     end
 
     test "範例資料涵蓋各種情境" do
@@ -28,10 +28,30 @@ module Maintenance
       assert MenuItem.where.not(servings: nil).exists?
     end
 
+    test "建立詢問單與訂購紀錄，側欄的已詢問、已訂購才有內容" do
+      Maintenance::SeedSampleDataTask.process
+
+      assert_equal 3, OrderInquiry.count
+      assert_equal %w[confirmed draft sent], OrderInquiry.pluck(:status).sort
+      assert OrderInquiry.all.all? { |inquiry| inquiry.items.any? }
+      assert_equal 2, OrderRecord.count, "一筆手動補登 + 一筆確認訂購自動產生"
+      assert_equal %w[inquiry manual], OrderRecord.pluck(:source).sort
+    end
+
+    test "詢問單金額與品項快照一致，外送費未知的草稿金額是 NULL" do
+      Maintenance::SeedSampleDataTask.process
+
+      OrderInquiry.all.each do |inquiry|
+        assert_equal inquiry.subtotal, inquiry.items.sum(&:line_total)
+      end
+      draft = OrderInquiry.find_by!(status: "draft")
+      assert_nil draft.total, "外送費未知，預計金額不能當 0"
+    end
+
     test "可重複執行，不會重複建立" do
       Maintenance::SeedSampleDataTask.process
 
-      assert_no_difference [ "Merchant.count", "MenuItem.count", "Event.count", "OrderRecord.count" ] do
+      assert_no_difference [ "Merchant.count", "MenuItem.count", "Event.count", "OrderRecord.count", "OrderInquiry.count", "OrderInquiryItem.count" ] do
         Maintenance::SeedSampleDataTask.process
       end
     end
