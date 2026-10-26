@@ -11,9 +11,10 @@
         <%= render OrderedDotComponent.new(ordered: merchant.ordered_before?) %>
       </p>
     </div>
-    <% if actions? %>
-      <div class="flex shrink-0 gap-1"><%= actions %></div>
-    <% end %>
+    <div class="flex shrink-0 gap-1">
+      <%= render ToggleButtonComponent.new(merchant: merchant, kind: :favorite) %>
+      <%= render ToggleButtonComponent.new(merchant: merchant, kind: :shortlist) %>
+    </div>
   </div>
 
   <div class="flex flex-wrap gap-1.5">

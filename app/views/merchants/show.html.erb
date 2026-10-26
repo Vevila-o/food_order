@@ -2,6 +2,10 @@
 <% content_for :header do %>
   <%= render(PageHeaderComponent.new(title: @merchant.name, subtitle: [ @merchant.district, @merchant.address ].compact_blank.join(" ").presence)) do |header| %>
     <% header.with_back_link { render BackLinkComponent.new(label: "返回列表", href: merchants_path) } %>
+    <% header.with_actions do %>
+      <%= render ToggleButtonComponent.new(merchant: @merchant, kind: :favorite) %>
+      <%= render ToggleButtonComponent.new(merchant: @merchant, kind: :shortlist) %>
+    <% end %>
     <% header.with_summary do %>
       <div class="flex flex-wrap items-center gap-1.5">
         <%= render KindBadgeComponent.new(kind: @merchant.kind) %>

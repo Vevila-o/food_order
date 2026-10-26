@@ -100,18 +100,18 @@ class MerchantCardComponentTest < ViewComponent::TestCase
     assert_selector "[data-ordered=false]", text: "沒訂過"
   end
 
-  test "actions slot：收藏 / 候選按鈕由呼叫端放入" do
-    render_card(create(:merchant)) do |card|
-      card.with_actions { "<button>收藏</button>".html_safe }
-    end
-
-    assert_selector "button", text: "收藏"
-  end
-
-  test "沒有 actions 時不產生按鈕區" do
+  test "右上角有收藏與下次候選兩個切換按鈕" do
     render_card(create(:merchant))
 
-    assert_no_selector "button"
+    assert_selector "button[aria-label=收藏][aria-pressed=false]"
+    assert_selector "button[aria-label=下次候選][aria-pressed=false]"
+  end
+
+  test "已收藏、已加入候選的狀態反映在按鈕上" do
+    render_card(create(:merchant, favorited: true, shortlisted: true))
+
+    assert_selector "button[aria-label=收藏][aria-pressed=true]"
+    assert_selector "button[aria-label=下次候選][aria-pressed=true]"
   end
 
   test "店名會被跳脫" do

@@ -30,13 +30,9 @@ class MerchantCardComponentPreview < ViewComponent::Preview
     render MerchantCardComponent.new(merchant: merchant)
   end
 
-  # actions slot：收藏 / 候選按鈕（階段 5 換成真正的切換按鈕）
-  def with_actions
-    merchant = PreviewMerchants.build(menu: PreviewMerchants.fresh_menu)
-    render(MerchantCardComponent.new(merchant: merchant)) do |card|
-      card.with_actions do
-        tag.button("☆ 收藏", class: "btn btn-sm") + tag.button("下次候選", class: "btn btn-secondary btn-sm")
-      end
-    end
+  # 已收藏 + 已加入候選：星號與書籤填色
+  def favorited_and_shortlisted
+    merchant = PreviewMerchants.build(favorited: true, shortlisted: true, menu: PreviewMerchants.fresh_menu)
+    render MerchantCardComponent.new(merchant: merchant)
   end
 end

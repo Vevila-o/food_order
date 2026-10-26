@@ -91,10 +91,19 @@ class FilterBarComponentTest < ViewComponent::TestCase
     assert_selector "dialog a[href='/merchants']", text: "清除全部篩選"
   end
 
+  test "「更多篩選」條件數由 filter-count 即時更新：抽屜欄位與標籤都有 target" do
+    render_bar
+
+    assert_selector "div[data-controller~=filter-count][data-action~='change->filter-count#update']"
+    assert_selector "button[data-action='dialog#open'] span[data-filter-count-target=label]"
+    assert_selector "dialog input[type=checkbox][data-filter-count-target=check]", count: FilterBarComponent::DRAWER_CHECKS.size
+    assert_selector "dialog select[data-filter-count-target=sort][data-default-value=recent]"
+  end
+
   test "抽屜是原生 dialog，可由 Stimulus 開關；整塊包在 dialog controller 裡" do
     render_bar
 
-    assert_selector "div[data-controller=dialog][data-action='turbo:submit-end->dialog#close'] dialog[data-dialog-target=dialog]"
+    assert_selector "div[data-controller~=dialog][data-action~='turbo:submit-end->dialog#close'] dialog[data-dialog-target=dialog]"
   end
 
   test "每個旗標都在膠囊列或抽屜出現（不會漏掉篩選條件）" do

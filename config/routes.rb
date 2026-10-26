@@ -17,6 +17,10 @@ Rails.application.routes.draw do
     # 確認菜單仍有效：該店所有菜單項目的日期改為今天
     post :verify_menu, on: :member
 
+    # 收藏與下次候選：POST 加入、DELETE 移除（重複操作結果一致）
+    resource :favorite, only: %i[create destroy], module: :merchants
+    resource :shortlist, only: %i[create destroy], module: :merchants
+
     # 貼上菜單：new（輸入）→ preview（預覽）→ create（確認寫入）
     resource :menu_import, only: %i[new create] do
       post :preview

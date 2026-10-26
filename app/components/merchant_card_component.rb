@@ -1,11 +1,9 @@
 # 首頁的店家卡片（設計稿）：白底圓角卡片。欄位順序（規格書 8.3）：
 #   店名 · 距離 → 食物/飲料標籤 → 每人估價 → 19:00 外送 → 外送費 → 菜單日期 → 收藏、下次候選按鈕
 #
-# 按鈕由呼叫端用 actions slot 放在右上角（收藏 / 候選切換在階段 5 加入）。
+# 右上角固定是收藏（星號）與下次候選（書籤）兩個切換按鈕。
 # 「曾訂購」圓點設計稿沒有，放在店名下方的地區 / 距離旁。
 class MerchantCardComponent < ViewComponent::Base
-  renders_one :actions
-
   def initialize(merchant:)
     @merchant = merchant
   end

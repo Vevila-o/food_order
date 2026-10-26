@@ -81,6 +81,25 @@ class Merchant < ApplicationRecord
     (EARTH_RADIUS_KM * 2 * Math.asin(Math.sqrt(a))).round(2)
   end
 
+  # 收藏與下次候選是兩個獨立的開關。不算「更新店家」，所以用 update_columns：
+  # 不改 updated_at（列表依最近更新排序，按一下收藏不該讓順序跳動），也不跑驗證。
+  def favorite!(value = true)
+    update_columns(favorited: value)
+  end
+
+  # 加入候選：排在候選名單最後（position = 目前最大值 + 1）；已在候選就什麼都不做
+  def add_to_shortlist!
+    return if shortlisted?
+
+    position = (Merchant.where(shortlisted: true).maximum(:shortlist_position) || 0) + 1
+    update_columns(shortlisted: true, shortlist_position: position)
+  end
+
+  # 移出候選：清掉排序位置，備註保留（之後再加回來還在）
+  def remove_from_shortlist!
+    update_columns(shortlisted: false, shortlist_position: nil)
+  end
+
   # 每人估價（M2-b 決定）：手填優先；沒填就用「新鮮菜單」推算最便宜餐食 + 最便宜飲料；
   # 只賣飲料的店沒有每人估價（改看 bulk_drink_item 的單價 / 單位）。都算不出來時為 nil（估價未填）。
   PriceEstimate = Data.define(:min, :max, :source) # source: :manual / :menu

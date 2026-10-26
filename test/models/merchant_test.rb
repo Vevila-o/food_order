@@ -337,4 +337,84 @@ class MerchantTest < ActiveSupport::TestCase
 
     assert_in_delta Time.current, merchant.reload.updated_at, 5
   end
+
+  # --- 收藏與下次候選 ---
+
+  test "收藏與取消收藏" do
+    merchant = create(:merchant)
+
+    merchant.favorite!
+    assert merchant.reload.favorited
+
+    merchant.favorite!(false)
+    assert_not merchant.reload.favorited
+  end
+
+  test "收藏與候選不算更新店家：不改 updated_at，列表順序不會跳動" do
+    merchant = create(:merchant)
+    merchant.update_column(:updated_at, 5.days.ago)
+    before = merchant.reload.updated_at
+
+    merchant.favorite!
+    merchant.add_to_shortlist!
+    merchant.remove_from_shortlist!
+
+    assert_equal before, merchant.reload.updated_at
+  end
+
+  test "加入候選：排在候選名單最後" do
+    first = create(:merchant)
+    second = create(:merchant)
+    third = create(:merchant)
+
+    [ first, second, third ].each(&:add_to_shortlist!)
+
+    assert_equal [ 1, 2, 3 ], [ first, second, third ].map { |m| m.reload.shortlist_position }
+    assert_equal [ first, second, third ], Merchant.shortlisted.to_a
+  end
+
+  test "已在候選時再加入：什麼都不做，位置不變" do
+    merchant = create(:merchant)
+    merchant.add_to_shortlist!
+    create(:merchant).add_to_shortlist!
+
+    merchant.add_to_shortlist!
+
+    assert_equal 1, merchant.reload.shortlist_position
+  end
+
+  test "移出候選：清掉位置但保留備註" do
+    merchant = create(:merchant, shortlist_note: "上次反應不錯")
+    merchant.add_to_shortlist!
+
+    merchant.remove_from_shortlist!
+
+    assert_not merchant.reload.shortlisted
+    assert_nil merchant.shortlist_position
+    assert_equal "上次反應不錯", merchant.shortlist_note
+  end
+
+  test "移出後再加入：位置接在目前最後一個後面，不會撞號" do
+    a = create(:merchant)
+    b = create(:merchant)
+    c = create(:merchant)
+    [ a, b, c ].each(&:add_to_shortlist!)
+
+    b.remove_from_shortlist!
+    b.add_to_shortlist!
+
+    assert_equal [ a, c, b ], Merchant.shortlisted.to_a
+    assert_equal [ 1, 3, 4 ], Merchant.shortlisted.map(&:shortlist_position)
+  end
+
+  test "收藏與候選互相獨立" do
+    merchant = create(:merchant)
+
+    merchant.favorite!
+    assert_not merchant.reload.shortlisted
+
+    merchant.add_to_shortlist!
+    merchant.favorite!(false)
+    assert merchant.reload.shortlisted
+  end
 end
