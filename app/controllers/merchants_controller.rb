@@ -1,9 +1,11 @@
 class MerchantsController < ApplicationController
   before_action :set_merchant, only: %i[show edit update destroy verify_menu]
 
-  # 階段 4 會換成卡片列表 + 篩選
+  # 卡片列表 + 篩選。條件放在網址（filter[...]），可分享、開新分頁也保留。
   def index
-    @merchants = Merchant.includes(:menu_items, :order_records).order(favorited: :desc, updated_at: :desc)
+    @filter = MerchantFilter.new(filter_params, budget: Event.current&.total_budget)
+    @merchants = @filter.merchants
+    @total_count = Merchant.count
   end
 
   def show
@@ -49,6 +51,11 @@ class MerchantsController < ApplicationController
   end
 
   private
+
+  # filter 不是 Hash（例如 ?filter=oops）時 permit 會把它丟掉，得到空條件，不會 500
+  def filter_params
+    params.permit(filter: [ :kind, :sort, *MerchantFilter::FLAGS ])[:filter].to_h
+  end
 
   def set_merchant
     @merchant = Merchant.includes(:menu_items, :sources, :order_records).find(params.expect(:id))

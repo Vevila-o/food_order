@@ -134,6 +134,12 @@ class MenuImportsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".badge-warning", text: "菜單可能過期"
   end
 
+  test "menu_import 參數不是 Hash 時不會報錯" do
+    get new_merchant_menu_import_path(@merchant), params: { menu_import: "oops" }
+
+    assert_response :success
+  end
+
   test "找不到店家回 404" do
     get new_merchant_menu_import_path(merchant_id: 0)
 

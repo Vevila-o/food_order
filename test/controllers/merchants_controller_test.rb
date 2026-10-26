@@ -26,6 +26,94 @@ class MerchantsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ favorite.name, normal.name ], names
   end
 
+  # --- index 篩選 ---
+
+  test "篩選條件放在網址：只列出符合的店家，並顯示筆數與條件數" do
+    create(:merchant, name: "免運店", delivery_fee: 0)
+    create(:merchant, name: "收費店", delivery_fee: 60)
+
+    get merchants_path, params: { filter: { free_delivery: "1" } }
+
+    assert_select "article", count: 1
+    assert_select "article h2 a", text: "免運店"
+    assert_select "turbo-frame#merchant-list strong", text: "1"
+    assert_select "turbo-frame#merchant-list", text: /已套用 1 個條件/
+    assert_select "turbo-frame#merchant-list a", text: "清除篩選"
+  end
+
+  test "篩選表單帶入目前條件（側欄與抽屜各一份）" do
+    get merchants_path, params: { filter: { favorited: "1", kind: "food_only" } }
+
+    assert_select "input[name='filter[favorited]'][checked]", count: 2
+    assert_select "input[type=radio][value=food_only][checked]", count: 2
+    assert_select "dialog.modal form button", text: "套用"
+  end
+
+  test "手機篩選按鈕顯示條件數" do
+    get merchants_path, params: { filter: { favorited: "1", daan: "1" } }
+
+    assert_select "button[data-action='dialog#open']", text: /篩選 \(2\)/
+  end
+
+  test "沒有符合條件：說明哪些資料不會被篩掉，並提供清除" do
+    create(:merchant)
+
+    get merchants_path, params: { filter: { favorited: "1" } }
+
+    assert_select "article", count: 0
+    assert_select "p", text: "沒有符合條件的店家"
+    assert_select "div", text: /沒填的店會照常顯示/
+  end
+
+  test "完全沒有店家時提示新增，而不是說沒有符合條件" do
+    get merchants_path
+
+    assert_select "p", text: "還沒有店家"
+    assert_select "a[href=?]", new_merchant_path, text: "新增店家"
+  end
+
+  test "排序：依每人估價低到高" do
+    create(:merchant, name: "貴", price_per_person_min: 120)
+    create(:merchant, name: "便宜", price_per_person_min: 80)
+
+    get merchants_path, params: { filter: { sort: "price" } }
+
+    assert_equal [ "便宜", "貴" ], css_select("article h2 a").map(&:text)
+  end
+
+  test "不認得的篩選參數被忽略，不會報錯" do
+    create(:merchant)
+
+    get merchants_path, params: { filter: { kind: "evil", sort: "random", hack: "1" }, other: "x" }
+
+    assert_response :success
+    assert_select "article", count: 1
+  end
+
+  test "篩選參數不是 Hash 時也不會報錯" do
+    get merchants_path, params: { filter: "oops" }
+
+    assert_response :success
+  end
+
+  test "卡片連結跳出 Turbo Frame，並由 detail-link 決定是否開新分頁" do
+    create(:merchant)
+
+    get merchants_path
+
+    assert_select "article h2 a[data-turbo-frame=_top][data-controller=detail-link]"
+  end
+
+  test "只認「本場預算」作為滿額免運的比較基準" do
+    create(:event, :with_headcount, headcount: 18, held_on: Date.current + 3)
+    create(:merchant, name: "門檻 1500", delivery_fee: 60, free_delivery_threshold: 1500)
+    create(:merchant, name: "門檻 3000", delivery_fee: 60, free_delivery_threshold: 3000)
+
+    get merchants_path, params: { filter: { free_delivery: "1" } }
+
+    assert_equal [ "門檻 1500" ], css_select("article h2 a").map(&:text)
+  end
+
   test "根路徑是店家列表" do
     get root_path
 

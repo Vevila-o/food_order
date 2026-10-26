@@ -2,15 +2,56 @@
 
 <h1 class="mb-4 text-2xl font-bold">店家</h1>
 
-<% if @merchants.empty? %>
-  <div class="rounded-box bg-base-200 p-6">
-    <p class="mb-3">還沒有店家。先新增一間，或到 <%= link_to "/tasks", "/tasks", class: "underline" %> 建立範例資料。</p>
-    <%= link_to "新增店家", new_merchant_path, class: "btn btn-primary" %>
-  </div>
-<% else %>
-  <div class="grid gap-4 md:grid-cols-2">
-    <% @merchants.each do |merchant| %>
-      <%= render MerchantCardComponent.new(merchant: merchant) %>
+<%# 手機：底部「篩選」按鈕開抽屜（dialog）；桌機：左側欄。兩者共用同一個 filter，條件都在網址上 %>
+<div data-controller="dialog" class="pb-24 md:grid md:grid-cols-[17rem_1fr] md:gap-6 md:pb-0">
+  <aside class="hidden md:block" aria-label="篩選">
+    <%= render FilterFormComponent.new(filter: @filter, variant: :sidebar) %>
+  </aside>
+
+  <section>
+    <%= turbo_frame_tag "merchant-list", data: { turbo_action: "advance" } do %>
+      <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <p aria-live="polite">
+          共 <strong><%= @merchants.size %></strong> 間店家<%= "（已套用 #{@filter.active_count} 個條件）" if @filter.active? %>
+        </p>
+        <% if @filter.active? %>
+          <%= link_to "清除篩選", merchants_path, class: "btn btn-ghost btn-sm", data: { turbo_frame: "merchant-list", turbo_action: "advance" } %>
+        <% end %>
+      </div>
+
+      <% if @merchants.any? %>
+        <div class="grid gap-4 lg:grid-cols-2">
+          <% @merchants.each do |merchant| %>
+            <%= render MerchantCardComponent.new(merchant: merchant) %>
+          <% end %>
+        </div>
+      <% elsif @total_count.zero? %>
+        <%= render(EmptyStateComponent.new(title: "還沒有店家")) do |empty| %>
+          <% empty.with_action { link_to "新增店家", new_merchant_path, class: "btn btn-primary" } %>
+          可以先新增一間，或到 <%= link_to "/tasks", "/tasks", class: "underline" %> 建立範例資料。
+        <% end %>
+      <% else %>
+        <%= render(EmptyStateComponent.new(title: "沒有符合條件的店家")) do |empty| %>
+          <% empty.with_action { link_to "清除篩選", merchants_path, class: "btn btn-primary", data: { turbo_frame: "merchant-list", turbo_action: "advance" } } %>
+          試著放寬條件。「19:00 外送」與「每人估價」沒填的店會照常顯示，「免外送費」則只算外送費明確為 0 的店。
+        <% end %>
+      <% end %>
+
+      <%# 手機底部篩選按鈕：放在 frame 內，條件數會跟著更新 %>
+      <%# 不用 inline style（CSP 會擋），安全區域用 Tailwind 的任意值 class %>
+      <div class="fixed inset-x-0 bottom-0 z-30 border-t border-base-300 bg-base-100 px-4 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] md:hidden">
+        <button type="button" class="btn btn-primary w-full" data-action="dialog#open">
+          篩選<%= " (#{@filter.active_count})" if @filter.active? %>
+        </button>
+      </div>
     <% end %>
-  </div>
-<% end %>
+  </section>
+
+  <dialog class="modal modal-bottom md:hidden" data-dialog-target="dialog" data-action="turbo:submit-end->dialog#close" aria-label="篩選條件">
+    <div class="modal-box max-h-[85dvh] pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <h2 class="mb-4 text-lg font-bold">篩選與排序</h2>
+      <%= render FilterFormComponent.new(filter: @filter, variant: :drawer) %>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button aria-label="關閉篩選">關閉</button></form>
+  </dialog>
+</div>

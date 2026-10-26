@@ -83,6 +83,8 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 - `app/services/` — 商業邏輯（`OrderPricing`、`EventBudget`、Basic Auth 憑證等）
 - `app/components/` — ViewComponent UI 元件（卡片、標籤、圓點、表單欄位、導覽列等**共用 UI 一律做成元件**，不用 helper / partial）。每個元件必須在 `test/components/previews/` 有 Lookbook 預覽，並有 `test/components/*_test.rb`；`PreviewsTest` 會檢查「每個元件都有預覽」與「所有預覽都能渲染」。預覽用的假資料見 `PreviewMerchants`（只在記憶體建立，不寫資料庫）。
 - `app/helpers/` — 只放純文字格式化（`enum_text`、`format_money`、`delivery_fee_text` 等），不放 UI 標記
+- `app/services/merchant_filter.rb` — 首頁篩選與排序（網址 `filter[...]`）。規則：19:00 外送「待確認也顯示」；每人 ≤ NT$100「估價沒填仍顯示」；免外送費「只算外送費明確為 0 或滿額門檻 ≤ 本場預算，未知不算」；預設排序收藏優先再依最近更新。不認得的參數值一律忽略。controller 用 `params.permit(filter: [...])[:filter].to_h`（`fetch(:filter, {})` 的預設值會變成未 permit 的 Parameters 而報錯）。
+- `app/services/menu_text_parser.rb`、`app/models/menu_import.rb` — 貼上菜單：解析 → 預覽 → 確認才寫入（確認時重新解析）
 - `app/validators/` — 自訂驗證（`HttpsUrlValidator`：只允許 https、擋內網 IP）
 - `test/factories/` — FactoryBot 定義，測試用 `create(:merchant, :drink_only)` 建資料，不用 fixtures
 - `app/services/sources/` — 每個外部來源一個 service：`ThreadsSearch`、`InstagramHashtag`、`GooglePlaces`、`WebSearch`、`RubyJamSchedule`（`KktixMailParser` 第一版不做）。皆回傳同一種 `MerchantCandidate`，再由 `MerchantUpserter` 合併重複店家（電話、IG 帳號、座標）。
@@ -93,6 +95,9 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 
 ### 前端
 
+- **Stimulus**（`app/javascript/controllers`）：`nested-form`（動態新增 / 移除巢狀列）、`auto-submit`（桌機篩選變更即送出）、`dialog`（手機篩選抽屜）、`detail-link`（桌機開新分頁、手機與 iOS 獨立模式同分頁）。
+- **Turbo Frame**：首頁列表在 `turbo-frame#merchant-list`，篩選表單 `data-turbo-frame` 指向它並 `turbo_action: advance` 更新網址；frame 內的連結要加 `data-turbo-frame="_top"` 才會跳出 frame。
+- **CSP**：不可使用 inline `style="..."`（`style-src 'self'`），要用 Tailwind class（例如 `pb-[calc(0.5rem+env(safe-area-inset-bottom))]`）。
 - **ViewComponent + Lookbook**：開發環境開 http://localhost:3000/lookbook 預覽所有元件（Lookbook 只裝在 development 群組，正式環境沒有；其介面需要 inline script，所以只對 Lookbook 自己的 controller 關閉 CSP，見 `config/initializers/lookbook.rb`）。
 - **ViewComponent 陷阱**：在 ERB 或預覽裡傳 block 要寫 `render(MyComponent.new(...)) { "內容" }`；寫成 `render MyComponent.new(...) { "內容" }` 時大括號會綁到 `new`，內容會默默變成空的。元件裡用 route / 自訂 helper 要加 `helpers.`（例如 `helpers.merchant_path(m)`、`helpers.format_money(n)`）。
 

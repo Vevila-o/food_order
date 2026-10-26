@@ -43,6 +43,10 @@ class Merchant < ApplicationRecord
   # 「可 19:00 外送」：排除明確不可，待確認的也顯示（否則清單幾乎全空）
   scope :possibly_delivers_at_19, -> { where.not(delivers_at_19: "no") }
   scope :possibly_delivers_to_daan, -> { where.not(delivers_to_daan: "no") }
+  # 「大安區內 / 可送大安區」：行政區是大安區，或沒有明確表示不能送大安區（外區店家待確認也顯示）
+  scope :in_or_delivers_to_daan, -> { where(district: "大安區").or(possibly_delivers_to_daan) }
+  # 菜單在 4 個月內：至少有一個新鮮的菜單項目
+  scope :with_fresh_menu, -> { where(id: MenuItem.fresh.select(:merchant_id)) }
   scope :price_per_person_within, ->(limit) { where(price_per_person_min: ..limit) }
   scope :ordered_before, -> { where(id: OrderRecord.select(:merchant_id)) }
   scope :never_ordered, -> { where.not(id: OrderRecord.select(:merchant_id)) }

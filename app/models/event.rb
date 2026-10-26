@@ -18,6 +18,11 @@ class Event < ApplicationRecord
 
   scope :latest_first, -> { order(held_on: :desc) }
 
+  # 目前要處理的活動：最近一場還沒舉行（含今天）的；都已過去則取最近一場
+  def self.current
+    where(held_on: Date.current..).order(:held_on).first || latest_first.first
+  end
+
   # 目前人數 = 最新一筆快照（Webhook 或手動修正）；沒有任何快照時為 nil
   def headcount
     latest_snapshot&.headcount

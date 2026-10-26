@@ -32,8 +32,8 @@ class MenuImportsController < ApplicationController
     @merchant = Merchant.find(params.expect(:merchant_id))
   end
 
-  # GET（從預覽返回修改）時可能沒有參數，所以用 fetch
+  # GET（從預覽返回修改）時可能沒有參數；menu_import 不是 Hash 時 permit 會丟掉它，不會 500
   def import_params
-    params.fetch(:menu_import, {}).permit(:food_text, :drink_text, :menu_date)
+    params.permit(menu_import: %i[food_text drink_text menu_date])[:menu_import].to_h
   end
 end

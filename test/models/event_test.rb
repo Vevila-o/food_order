@@ -59,4 +59,24 @@ class EventTest < ActiveSupport::TestCase
     assert_equal 1800, event.total_budget
     assert_equal 1440, event.min_budget
   end
+
+  test "目前活動：最近一場還沒舉行（含今天）的" do
+    travel_to Time.zone.local(2026, 10, 27, 12, 0) do
+      create(:event, held_on: Date.new(2026, 9, 15))
+      today = create(:event, held_on: Date.new(2026, 10, 27))
+      create(:event, held_on: Date.new(2026, 11, 17))
+
+      assert_equal today, Event.current
+    end
+  end
+
+  test "目前活動：都已過去時取最近一場，沒有活動時為 nil" do
+    travel_to Time.zone.local(2026, 12, 1, 12, 0) do
+      assert_nil Event.current
+      create(:event, held_on: Date.new(2026, 9, 15))
+      latest = create(:event, held_on: Date.new(2026, 10, 27))
+
+      assert_equal latest, Event.current
+    end
+  end
 end
