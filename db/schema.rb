@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_27_000021) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_27_000022) do
   create_table "app_settings", force: :cascade do |t|
     t.boolean "singleton", default: true, null: false
     t.string "delivery_place_name"
@@ -117,8 +117,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_27_000021) do
     t.datetime "last_verified_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "last_viewed_at"
     t.index ["favorited"], name: "index_merchants_on_favorited"
     t.index ["instagram"], name: "index_merchants_on_instagram"
+    t.index ["last_viewed_at"], name: "index_merchants_on_last_viewed_at"
     t.index ["phone"], name: "index_merchants_on_phone"
     t.index ["shortlisted"], name: "index_merchants_on_shortlisted"
     t.check_constraint "(delivery_fee IS NULL OR delivery_fee >= 0) AND (free_delivery_threshold IS NULL OR free_delivery_threshold >= 0) AND (price_per_person_min IS NULL OR price_per_person_min >= 0) AND (price_per_person_max IS NULL OR price_per_person_max >= 0)", name: "merchants_money_non_negative"

@@ -417,4 +417,47 @@ class MerchantTest < ActiveSupport::TestCase
     merchant.favorite!(false)
     assert merchant.reload.shortlisted
   end
+
+  # --- 瀏覽歷史 ---
+
+  test "記錄瀏覽：只更新最後瀏覽時間，不改 updated_at" do
+    merchant = create(:merchant)
+    merchant.update_column(:updated_at, 4.days.ago)
+    before = merchant.reload.updated_at
+
+    merchant.record_view!
+
+    assert_in_delta Time.current, merchant.reload.last_viewed_at, 5
+    assert_equal before, merchant.updated_at
+  end
+
+  test "瀏覽歷史：最近看的在前，沒看過的不列入" do
+    old = create(:merchant, name: "舊")
+    recent = create(:merchant, name: "新")
+    create(:merchant, name: "沒看過")
+    old.record_view!(at: 3.days.ago)
+    recent.record_view!(at: 1.hour.ago)
+
+    assert_equal [ recent, old ], Merchant.recently_viewed.to_a
+  end
+
+  test "瀏覽歷史最多 20 間，保留最近的" do
+    merchants = Array.new(23) { |i| create(:merchant).tap { |m| m.record_view!(at: (23 - i).hours.ago) } }
+
+    history = Merchant.recently_viewed.to_a
+
+    assert_equal Merchant::HISTORY_LIMIT, history.size
+    assert_equal merchants.last, history.first
+    assert_not_includes history, merchants.first
+  end
+
+  test "再看一次同一間店：只更新時間，歷史裡仍只有一筆" do
+    merchant = create(:merchant)
+    merchant.record_view!(at: 2.days.ago)
+
+    merchant.record_view!
+
+    assert_equal [ merchant ], Merchant.recently_viewed.to_a
+    assert_in_delta Time.current, merchant.reload.last_viewed_at, 5
+  end
 end

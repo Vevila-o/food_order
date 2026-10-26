@@ -10,6 +10,7 @@ class MerchantsController < ApplicationController
   end
 
   def show
+    @merchant.record_view! unless prefetch_request?
   end
 
   def new
@@ -54,6 +55,11 @@ class MerchantsController < ApplicationController
   private
 
   # filter 不是 Hash（例如 ?filter=oops）時 permit 會把它丟掉，得到空條件，不會 500
+  # Turbo 會在滑鼠移到連結上時預先載入頁面（帶 X-Sec-Purpose: prefetch），那不算真的「瀏覽」
+  def prefetch_request?
+    request.headers["X-Sec-Purpose"].to_s.start_with?("prefetch")
+  end
+
   def filter_params
     params.permit(filter: [ :sort, *MerchantFilter::FLAGS, { kinds: [] } ])[:filter].to_h
   end
