@@ -1,4 +1,4 @@
-<div class="md:rounded-2xl md:bg-base-100 md:p-2 md:shadow-sm">
+<div class="md:overflow-x-auto md:rounded-2xl md:bg-base-100 md:p-2 md:shadow-sm">
   <table class="w-full text-left text-sm">
     <caption class="sr-only"><%= caption %></caption>
     <thead class="hidden md:table-header-group">
@@ -12,7 +12,7 @@
       <% rows.each do |cells| %>
         <tr class="mb-3 block rounded-2xl bg-base-100 p-4 shadow-sm md:mb-0 md:table-row md:rounded-none md:bg-transparent md:p-0 md:shadow-none md:border-t md:border-base-300">
           <% cells.each_with_index do |cell, index| %>
-            <td class="flex items-center justify-between gap-3 py-1 md:table-cell md:whitespace-nowrap md:px-3 md:py-3 <%= 'font-medium' if index.zero? %>">
+            <td class="<%= cell_class(index) %>">
               <span class="text-xs text-muted md:hidden"><%= headers[index] %></span>
               <span><%= cell %></span>
             </td>

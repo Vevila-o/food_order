@@ -157,8 +157,9 @@ module Merchants
 
       get inquiries_path
 
-      assert_select "tbody td > span:last-child", text: "與 涼飲店 一組"
-      assert_select "tbody td > span:last-child", text: "與 便當店 一組"
+      assert_select "tbody td span.text-muted", text: "與 涼飲店 一組"
+      assert_select "tbody td span.text-muted", text: "與 便當店 一組"
+      assert_select "thead th", text: "搭配", count: 0
       assert_select "tbody a", text: "開啟詢問", count: 2
     end
 

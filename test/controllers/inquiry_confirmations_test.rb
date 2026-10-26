@@ -108,15 +108,59 @@ class InquiryConfirmationsTest < ActionDispatch::IntegrationTest
     assert_nil unknown.order_record.total
   end
 
-  test "配對的兩家各自記錄，互不影響" do
+  test "配對的兩家：按其中一家的訂購，另一家也記錄為已訂購，兩家都變曾訂購" do
     group = create(:order_group, event: @event)
-    drink = create(:order_inquiry, event: @event, merchant: create(:merchant, :drink_only), order_group: group)
+    drink_shop = create(:merchant, :drink_only, name: "涼飲店")
+    drink = create(:order_inquiry, event: @event, merchant: drink_shop, order_group: group)
     @inquiry.update!(order_group: group)
 
-    post inquiry_confirmation_path(@inquiry)
+    assert_difference "OrderRecord.count", 2 do
+      post inquiry_confirmation_path(@inquiry)
+    end
 
     assert @inquiry.reload.confirmed?
-    assert drink.reload.draft?
+    assert drink.reload.confirmed?
+    assert @merchant.reload.ordered_before?
+    assert drink_shop.reload.ordered_before?
+    assert_equal "已記錄「阿嬤便當」、「涼飲店」為已訂購", flash[:notice]
+  end
+
+  test "配對的另一家已經訂購過：不會多一筆紀錄" do
+    group = create(:order_group, event: @event)
+    drink = create(:order_inquiry, event: @event, merchant: create(:merchant, :drink_only), order_group: group)
+    drink.confirm!
+    @inquiry.update!(order_group: group)
+
+    assert_difference "OrderRecord.count", 1 do
+      post inquiry_confirmation_path(@inquiry)
+    end
+  end
+
+  test "配對的兩家：取消其中一家，另一家也取消" do
+    group = create(:order_group, event: @event)
+    drink_shop = create(:merchant, :drink_only)
+    drink = create(:order_inquiry, event: @event, merchant: drink_shop, order_group: group, status: "sent", sent_at: Time.current)
+    @inquiry.update!(order_group: group)
+    post inquiry_confirmation_path(@inquiry)
+
+    assert_difference "OrderRecord.count", -2 do
+      delete inquiry_confirmation_path(drink)
+    end
+
+    assert @inquiry.reload.sent?
+    assert drink.reload.sent?
+    assert_not @merchant.reload.ordered_before?
+    assert_not drink_shop.reload.ordered_before?
+  end
+
+  test "配對的列：確認對話框提到搭配的另一家" do
+    group = create(:order_group, event: @event)
+    create(:order_inquiry, event: @event, merchant: create(:merchant, :drink_only, name: "涼飲店"), order_group: group)
+    @inquiry.update!(order_group: group)
+
+    get inquiries_path
+
+    assert_select "form[data-turbo-confirm*='與搭配的「涼飲店」都已訂購']"
   end
 
   test "活動日期已過的詢問單也能記錄訂購" do

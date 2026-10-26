@@ -53,6 +53,23 @@ class OrderInquiry < ApplicationRecord
     end
   end
 
+  # 配對的兩家一起記錄訂購：按其中一家的「訂購」，同組另一家也算訂了（店家的「曾訂購」都要更新）。
+  # 另一家已經確認過就略過。
+  def confirm_with_partner!
+    transaction do
+      confirm!
+      partner&.confirm!
+    end
+  end
+
+  # 取消配對的兩家（只會刪掉自動產生的訂購紀錄）
+  def unconfirm_with_partner!
+    transaction do
+      unconfirm!
+      partner&.unconfirm!
+    end
+  end
+
   # 取消確認：退回 sent（或沒按過按鈕就退回 draft），並刪除自動產生的紀錄
   def unconfirm!
     return unless confirmed?
