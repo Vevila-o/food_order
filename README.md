@@ -39,6 +39,16 @@ bin/dev              # 啟動 web 與 Tailwind watcher
 
 存取保護細節見 [docs/basic-auth.md](docs/basic-auth.md)。
 
+## 範例資料（開發用）
+
+假資料不放 `db/seeds.rb`，改用 [Maintenance Tasks](https://github.com/Shopify/maintenance_tasks)：
+
+1. `bin/dev` 啟動後開啟 http://localhost:3000/tasks（受 Basic Auth 保護）
+2. 執行 `Maintenance::SeedSampleDataTask`：建立 5 間「【範例】」店家（餐+飲、只有餐、只賣飲料、19:00 不外送、無聯絡方式、菜單過期等情境）、一場範例活動與人數 18
+3. 不需要時執行 `Maintenance::RemoveSampleDataTask` 一次移除
+
+可重複執行、不會動到真實資料、正式環境拒絕執行。頁面的自動重新整理被 CSP 擋掉，執行後請手動重新整理看進度。
+
 ## 測試與檢查
 
 ```bash

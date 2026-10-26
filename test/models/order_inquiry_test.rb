@@ -77,6 +77,15 @@ class OrderInquiryTest < ActiveSupport::TestCase
     assert_equal inquiry.merchant, record.merchant
   end
 
+  test "活動還沒舉行（未來日期）也能確認訂購" do
+    travel_to Time.zone.local(2026, 10, 22, 12, 0) do
+      inquiry = create(:order_inquiry, event: create(:event, held_on: Date.new(2026, 10, 27)))
+
+      assert_nothing_raised { inquiry.confirm! }
+      assert_equal Date.new(2026, 10, 27), inquiry.order_record.ordered_on
+    end
+  end
+
   test "重複確認不會產生第二筆紀錄" do
     inquiry = create(:order_inquiry)
     inquiry.confirm!

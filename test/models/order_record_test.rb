@@ -5,8 +5,12 @@ class OrderRecordTest < ActiveSupport::TestCase
     assert build(:order_record, ordered_on: nil).valid?
   end
 
-  test "訂購日期不可晚於今天" do
-    assert_not build(:order_record, ordered_on: Date.current + 1).valid?
+  test "手動補登的訂購日期不可晚於今天" do
+    assert_not build(:order_record, source: "manual", ordered_on: Date.current + 1).valid?
+  end
+
+  test "詢問單自動產生的紀錄日期是活動日，可以是未來（訂餐通常在活動前幾天）" do
+    assert build(:order_record, source: "inquiry", ordered_on: Date.current + 3).valid?
   end
 
   test "日期倒序排列，日期不明的排最後" do

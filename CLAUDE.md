@@ -78,6 +78,7 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 - `test/factories/` — FactoryBot 定義，測試用 `create(:merchant, :drink_only)` 建資料，不用 fixtures
 - `app/services/sources/` — 每個外部來源一個 service：`ThreadsSearch`、`InstagramHashtag`、`GooglePlaces`、`WebSearch`、`RubyJamSchedule`（`KktixMailParser` 第一版不做）。皆回傳同一種 `MerchantCandidate`，再由 `MerchantUpserter` 合併重複店家（電話、IG 帳號、座標）。
 - `app/jobs/` — Solid Queue 背景工作；排程寫在 `config/recurring.yml`（每日 06:00 更新商家、每日同步 Ruby Jam 日期；KKTIX 靠 Webhook 即時推送）。
+- `app/tasks/maintenance/` — Maintenance Tasks（掛在 `/tasks`，`parent_controller` 已設為 `ApplicationController` 才受 Basic Auth 保護；預設是不受保護的）。範例資料 `SeedSampleDataTask` / `RemoveSampleDataTask` 呼叫 `SampleData`，店家以「【範例】」開頭，正式環境拒絕執行。其 UI 的 inline 自動重新整理 script 會被 CSP 擋掉，需手動重新整理。
 - `docs/` — 補充文件（如 `basic-auth.md`）
 - `test/fixtures/vcr_cassettes/` — VCR 錄製檔（M5 起）
 

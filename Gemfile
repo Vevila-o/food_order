@@ -72,3 +72,5 @@ gem "webmock", "~> 3.34", group: :test
 gem "vcr", "~> 6.4", group: :test
 
 gem "factory_bot_rails", "~> 6.5", groups: [ :development, :test ]
+
+gem "maintenance_tasks", "~> 2.17"

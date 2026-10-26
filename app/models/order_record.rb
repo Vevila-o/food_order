@@ -7,7 +7,8 @@ class OrderRecord < ApplicationRecord
   enum :source, { inquiry: "inquiry", manual: "manual" }, prefix: true, validate: true
 
   validates :headcount, :total, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
-  validate :ordered_on_not_in_future
+  # 手動補登的是「過去」訂過的紀錄；詢問單自動產生的紀錄日期是活動日，訂餐通常在活動前幾天，所以會是未來
+  validate :ordered_on_not_in_future, if: :source_manual?
 
   # 日期倒序；日期不明（NULL）排最後。PostgreSQL 的 DESC 預設會把 NULL 排最前面，要明確指定。
   scope :recent_first, -> { order(Arel.sql("ordered_on DESC NULLS LAST, created_at DESC")) }
