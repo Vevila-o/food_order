@@ -8,6 +8,7 @@ class Event < ApplicationRecord
 
   has_many :registration_snapshots, dependent: :destroy
   has_many :order_inquiries, dependent: :destroy
+  has_many :order_groups, dependent: :destroy
   has_many :order_records, dependent: :nullify
 
   before_validation :assign_defaults

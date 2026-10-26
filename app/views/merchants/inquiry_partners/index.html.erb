@@ -1,0 +1,14 @@
+<%= turbo_frame_tag "partner-list" do %>
+  <% if @candidates.any? %>
+    <p class="mb-3 text-sm text-muted" aria-live="polite">共 <span class="tabular-nums"><%= @candidates.size %></span> 家，依「下次訂購 → 收藏 → 最近更新」排序。</p>
+    <div class="flex flex-col gap-3">
+      <% @candidates.each do |candidate| %>
+        <%= render PartnerPickCardComponent.new(merchant: candidate, selected: candidate.id.to_s == @current_partner_id, inquired: @inquired_ids.include?(candidate.id)) %>
+      <% end %>
+    </div>
+  <% else %>
+    <%= render(EmptyStateComponent.new(title: "沒有可以搭配的店家")) do %>
+      先到首頁新增<%= { "drink" => "飲料", "food" => "餐食" }.fetch(@role, "") %>店家，或確認 19:00 能外送。
+    <% end %>
+  <% end %>
+<% end %>

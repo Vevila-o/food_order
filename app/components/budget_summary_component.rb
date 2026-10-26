@@ -1,15 +1,33 @@
 # 產生器的金額區：這張詢問單的小計 + 外送費 = 預計金額，以及本場合計與總預算的比較。
 # 一場活動可有多張詢問單（餐點店 + 飲料店），預算比較的是合計。外送費未知（nil）顯示「待確認」，不當 0。
+# 配對兩家時，pricing 是兩家的合計，parts 列出各家的明細。
 class BudgetSummaryComponent < ViewComponent::Base
-  # pricing：OrderPricing::Result；budget：EventBudget（含這張試算）；others：本場其他店家的詢問單；any_lines：有沒有選品項
-  def initialize(pricing:, budget:, others: [], any_lines: true)
+  # 某一家的明細：店名與它的 OrderPricing::Result
+  Part = Data.define(:name, :pricing)
+
+  # pricing：小計 / 外送費 / 預計金額（單店是 OrderPricing::Result，兩家是合計）；budget：EventBudget（含試算）；
+  # others：本場其他店家的詢問單；any_lines：有沒有選品項；parts：兩家都有選時各家的明細（單店不用給）
+  def initialize(pricing:, budget:, others: [], any_lines: true, parts: [])
     @pricing = pricing
     @budget = budget
     @others = others
     @any_lines = any_lines
+    @parts = parts
   end
 
-  attr_reader :pricing, :budget, :others
+  attr_reader :pricing, :budget, :others, :parts
+
+  def show_parts? = parts.size > 1
+
+  def part_fee_text(part)
+    case part.pricing.delivery_fee
+    when nil then "外送費待確認"
+    when 0 then "免外送費"
+    else "外送費 #{helpers.format_money(part.pricing.delivery_fee)}"
+    end
+  end
+
+  def part_total_text(part) = part.pricing.total ? helpers.format_money(part.pricing.total) : "—"
 
   def any_lines? = @any_lines
 

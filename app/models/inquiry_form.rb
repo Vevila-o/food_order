@@ -91,6 +91,12 @@ class InquiryForm
     @others ||= event.order_inquiries.where.not(merchant_id: merchant.id).to_a
   end
 
+  # 預算試算用的詢問單（不存資料庫）
+  def draft_inquiry
+    OrderInquiry.new(event: event, merchant: merchant, headcount_at_creation: event.headcount.to_i,
+                     subtotal: pricing.subtotal, delivery_fee: pricing.delivery_fee, total: pricing.total)
+  end
+
   validate :event_and_headcount_present
   validate :quantities_valid
   validate :not_confirmed
@@ -124,12 +130,6 @@ class InquiryForm
   private
 
   def setting = @setting ||= AppSetting.instance
-
-  # 預算試算用的詢問單（不存資料庫）
-  def draft_inquiry
-    OrderInquiry.new(event: event, merchant: merchant, headcount_at_creation: event.headcount.to_i,
-                     subtotal: pricing.subtotal, delivery_fee: pricing.delivery_fee, total: pricing.total)
-  end
 
   def existing_quantities
     return {} unless existing_inquiry

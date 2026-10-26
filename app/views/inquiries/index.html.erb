@@ -9,14 +9,17 @@
     <% [
       format_month(inquiry.event.held_on),
       link_to(inquiry.merchant.name, merchant_path(inquiry.merchant), class: "underline-offset-2 hover:underline"),
+      (partner = inquiry.order_group&.order_inquiries&.find { |other| other.id != inquiry.id }) ? "與 #{partner.merchant.name} 一組" : "—",
       render(PillComponent.new(tone: status_tones.fetch(inquiry.status))) { enum_text(inquiry, :status) },
       enum_text(inquiry, :contacted_via) || "—",
       "#{inquiry.headcount_at_creation} 人",
       inquiry.total ? format_money(inquiry.total) : render(PillComponent.new(tone: :secondary)) { t("common.unknown_amount") },
-      l(inquiry.created_at.to_date, format: :long)
+      l(inquiry.created_at.to_date, format: :long),
+      # 只有目前這一場能重開產生器（帶著搭檔）；歷史活動的詢問單只供查看
+      inquiry.event_id == @current_event&.id ? link_to("開啟詢問", merchant_inquiry_path(inquiry.merchant, partner_id: partner&.merchant_id.to_s), class: "font-medium underline") : "—"
     ] %>
   <% end %>
-  <%= render DataTableComponent.new(headers: %w[活動 店家 狀態 管道 人數 預計金額 建立日期], rows: rows, caption: "已詢問的紀錄") %>
+  <%= render DataTableComponent.new(headers: %w[活動 店家 搭配 狀態 管道 人數 預計金額 建立日期 操作], rows: rows, caption: "已詢問的紀錄") %>
 <% else %>
   <%= render(EmptyStateComponent.new(title: "還沒有詢問紀錄")) do |empty| %>
     <% empty.with_action { link_to "去看看店家", merchants_path, class: "btn btn-primary" } %>
