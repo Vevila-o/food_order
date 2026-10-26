@@ -21,6 +21,9 @@ Rails.application.routes.draw do
     resource :favorite, only: %i[create destroy], module: :merchants
     resource :shortlist, only: %i[create destroy], module: :merchants
 
+    # 訂單詢問產生器：GET 顯示（數量放在網址，Turbo Frame 即時重算）、POST 儲存草稿 / 標為已詢問（JSON）
+    resource :inquiry, only: %i[show create], module: :merchants
+
     # 貼上菜單：new（輸入）→ preview（預覽）→ create（確認寫入）
     resource :menu_import, only: %i[new create] do
       post :preview

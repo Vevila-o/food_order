@@ -1,0 +1,11 @@
+<div class="flex items-center gap-1" data-controller="stepper" data-stepper-max-value="<%= max %>" data-stepper-headcount-value="<%= headcount %>">
+  <button type="button" class="<%= round_button_class %>" aria-label="減少<%= label %>" data-action="stepper#decrement">−</button>
+  <input type="number" name="<%= name %>" value="<%= value %>" min="0" max="<%= max %>" inputmode="numeric"
+         aria-label="<%= label %>數量" class="input h-11 w-16 px-1 text-center tabular-nums"
+         data-stepper-target="input">
+  <button type="button" class="<%= round_button_class %>" aria-label="增加<%= label %>" data-action="stepper#increment">＋</button>
+  <% if headcount %>
+    <button type="button" class="tap-target ml-1 inline-flex cursor-pointer items-center rounded-full border border-soft px-3 text-[13px] font-medium"
+            aria-label="<%= label %>數量設為人數 <%= headcount %>" data-action="stepper#fill">＝ 人數</button>
+  <% end %>
+</div>

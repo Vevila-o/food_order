@@ -1,0 +1,26 @@
+<section class="flex flex-col gap-2.5 rounded-2xl bg-base-100 p-4" aria-label="聯絡店家">
+  <h2 class="text-base font-bold">聯絡店家</h2>
+  <% if links.any? %>
+    <p class="text-sm text-muted">按下按鈕會先複製訊息，再開啟對方的帳號，貼上後自行送出。系統不會自動傳訊息。</p>
+    <div class="flex flex-wrap gap-2">
+      <% links.each_with_index do |(channel, url), index| %>
+        <button type="button" class="<%= button_class(index) %>" <%= "disabled" if disabled? %>
+                data-action="inquiry#contact" data-inquiry-channel-param="<%= channel %>" data-inquiry-href-param="<%= url %>">
+          <%= helpers.channel_label(channel) %>
+        </button>
+      <% end %>
+    </div>
+    <% if disabled? %>
+      <p class="text-sm text-muted">選好餐點後才能複製訊息。</p>
+    <% end %>
+  <% else %>
+    <p>尚無聯絡方式，請到來源網址查看。</p>
+    <% source_urls.each do |url| %>
+      <%= link_to url, class: "tap-target flex items-center justify-between gap-2 break-all text-[13px]", target: "_blank", rel: "noopener noreferrer" do %>
+        <span><%= url %></span>
+        <%= render IconComponent.new(name: :external, size: 14) %>
+      <% end %>
+    <% end %>
+  <% end %>
+  <p class="text-sm font-medium" role="status" aria-live="polite" data-inquiry-target="status"></p>
+</section>
