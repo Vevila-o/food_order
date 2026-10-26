@@ -1,17 +1,46 @@
 <% content_for :title, "下次訂購 · Ruby Jam 訂餐助手" %>
+<%# 排序與儲存備註後重新導回這一頁：用 morph 更新並保留捲動位置，不會跳回頁首 %>
+<%= turbo_refreshes_with method: :morph, scroll: :preserve %>
 <% content_for :header do %>
-  <%= render PageHeaderComponent.new(title: "下次訂購", subtitle: "共 #{@merchants.size} 間") %>
+  <%= render PageHeaderComponent.new(title: "下次訂購", subtitle: "共 #{@merchants.size} 間，順序由你決定") %>
 <% end %>
 
 <% if @merchants.any? %>
-  <div class="grid gap-3 md:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] md:gap-4">
-    <% @merchants.each do |merchant| %>
-      <%= render MerchantCardComponent.new(merchant: merchant) %>
+  <ol class="flex flex-col gap-4" aria-label="候選名單">
+    <% @merchants.each_with_index do |merchant, index| %>
+      <li class="flex gap-3" id="shortlist_item_<%= merchant.id %>">
+        <%# 順序：往前 / 往後一位（最前或最後的停用） %>
+        <div class="flex shrink-0 flex-col items-center gap-1 pt-1">
+          <%= button_to move_merchant_shortlist_path(merchant, direction: "up"), method: :patch, disabled: index.zero?,
+                title: "往前一位", aria: { label: "#{merchant.name}往前一位" },
+                class: "inline-flex size-11 cursor-pointer items-center justify-center rounded-full bg-base-100 shadow-sm disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-base-content",
+                form: { class: "contents" } do %>
+            <%= render IconComponent.new(name: :arrow_up, size: 20) %>
+          <% end %>
+          <span class="text-sm font-bold tabular-nums" aria-label="第 <%= index + 1 %> 順位"><%= index + 1 %></span>
+          <%= button_to move_merchant_shortlist_path(merchant, direction: "down"), method: :patch, disabled: index == @merchants.size - 1,
+                title: "往後一位", aria: { label: "#{merchant.name}往後一位" },
+                class: "inline-flex size-11 cursor-pointer items-center justify-center rounded-full bg-base-100 shadow-sm disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-base-content",
+                form: { class: "contents" } do %>
+            <%= render IconComponent.new(name: :arrow_down, size: 20) %>
+          <% end %>
+        </div>
+
+        <div class="flex min-w-0 flex-1 flex-col gap-2">
+          <%= render MerchantCardComponent.new(merchant: merchant) %>
+          <%= form_with url: merchant_shortlist_path(merchant), method: :patch, class: "flex flex-col gap-2 rounded-2xl bg-base-100 p-3 shadow-sm" do |f| %>
+            <%= f.label :shortlist_note, "備註", for: "shortlist_note_#{merchant.id}", class: "text-sm font-medium" %>
+            <%= f.text_area :shortlist_note, value: merchant.shortlist_note, id: "shortlist_note_#{merchant.id}", rows: 2, maxlength: Merchant::SHORTLIST_NOTE_LIMIT,
+                  placeholder: "例如：上次太鹹、要提前兩天訂", class: "textarea w-full" %>
+            <div><%= f.submit "儲存備註", class: "btn btn-sm btn-outline" %></div>
+          <% end %>
+        </div>
+      </li>
     <% end %>
-  </div>
+  </ol>
 <% else %>
   <%= render(EmptyStateComponent.new(title: "還沒有下次要訂的店家")) do |empty| %>
     <% empty.with_action { link_to "去看看店家", merchants_path, class: "btn btn-primary" } %>
-    點店家卡片右上角的書籤，就會加到這裡，下次訂餐時從這裡挑。
+    點店家卡片右上角的書籤，就會加到這裡，下次訂餐時從這裡挑，還可以調整順序、寫備註。
   <% end %>
 <% end %>

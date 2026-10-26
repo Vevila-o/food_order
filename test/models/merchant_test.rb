@@ -461,6 +461,94 @@ class MerchantTest < ActiveSupport::TestCase
     assert_in_delta Time.current, merchant.reload.last_viewed_at, 5
   end
 
+  # --- 候選名單：排序與備註 ---
+
+  def shortlist_of(*merchants)
+    merchants.each(&:add_to_shortlist!)
+    Merchant.shortlisted.map(&:name)
+  end
+
+  test "move_in_shortlist!：往前 / 往後一位，和相鄰的交換" do
+    a, b, c = %w[甲 乙 丙].map { |name| create(:merchant, name: name) }
+    shortlist_of(a, b, c)
+
+    assert b.reload.move_in_shortlist!(:up)
+    assert_equal %w[乙 甲 丙], Merchant.shortlisted.map(&:name)
+    assert b.reload.move_in_shortlist!("down")
+    assert_equal %w[甲 乙 丙], Merchant.shortlisted.map(&:name)
+    assert a.reload.move_in_shortlist!(:down)
+    assert_equal %w[乙 甲 丙], Merchant.shortlisted.map(&:name)
+  end
+
+  test "move_in_shortlist!：已經在最前 / 最後就不動，回傳 false" do
+    a, b = %w[甲 乙].map { |name| create(:merchant, name: name) }
+    shortlist_of(a, b)
+
+    assert_not a.reload.move_in_shortlist!(:up)
+    assert_not b.reload.move_in_shortlist!(:down)
+    assert_equal %w[甲 乙], Merchant.shortlisted.map(&:name)
+  end
+
+  test "move_in_shortlist!：不在候選、方向不認得都不動" do
+    a, b = %w[甲 乙].map { |name| create(:merchant, name: name) }
+    shortlist_of(a, b)
+    outsider = create(:merchant)
+
+    assert_not outsider.move_in_shortlist!(:up)
+    assert_not b.reload.move_in_shortlist!(:sideways)
+    assert_not b.reload.move_in_shortlist!(nil)
+    assert_equal %w[甲 乙], Merchant.shortlisted.map(&:name)
+  end
+
+  test "move_in_shortlist!：位置有重複或空位時先整理成 1..n 再移動" do
+    a, b, c = %w[甲 乙 丙].map { |name| create(:merchant, name: name) }
+    shortlist_of(a, b, c)
+    a.update_columns(shortlist_position: 5)
+    b.update_columns(shortlist_position: 5)
+    c.update_columns(shortlist_position: 9)
+
+    assert c.reload.move_in_shortlist!(:up)
+
+    assert_equal [ 1, 2, 3 ], Merchant.shortlisted.map(&:shortlist_position)
+    assert_equal %w[甲 丙 乙], Merchant.shortlisted.map(&:name)
+  end
+
+  test "move_in_shortlist! 不改 updated_at（列表依最近更新排序，排序不該讓它跳動）" do
+    a, b = %w[甲 乙].map { |name| create(:merchant, name: name) }
+    shortlist_of(a, b)
+    before = b.reload.updated_at
+
+    travel(1.hour) { b.move_in_shortlist!(:up) }
+
+    assert_equal before, b.reload.updated_at
+  end
+
+  test "update_shortlist_note!：存備註、空白存成 nil、超過上限不存" do
+    merchant = create(:merchant)
+
+    assert merchant.update_shortlist_note!("  上次太鹹\n要提前兩天訂  ")
+    assert_equal "上次太鹹\n要提前兩天訂", merchant.reload.shortlist_note
+
+    assert merchant.update_shortlist_note!("   ")
+    assert_nil merchant.reload.shortlist_note
+
+    merchant.update_shortlist_note!("保留")
+    assert_not merchant.update_shortlist_note!("字" * (Merchant::SHORTLIST_NOTE_LIMIT + 1))
+    assert_equal "保留", merchant.reload.shortlist_note
+    assert merchant.update_shortlist_note!("字" * Merchant::SHORTLIST_NOTE_LIMIT)
+  end
+
+  test "備註在移出候選後保留，再加回來還在" do
+    merchant = create(:merchant)
+    merchant.add_to_shortlist!
+    merchant.update_shortlist_note!("備註")
+
+    merchant.remove_from_shortlist!
+    merchant.add_to_shortlist!
+
+    assert_equal "備註", merchant.reload.shortlist_note
+  end
+
   test "recently_ordered_on：最近一筆訂購在 45 天內才有，剛好 45 天也算" do
     travel_to Date.new(2026, 10, 27) do
       merchant = create(:merchant)
