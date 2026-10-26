@@ -1,0 +1,17 @@
+<% content_for :title, "下次訂購 · Ruby Jam 訂餐助手" %>
+<% content_for :header do %>
+  <%= render PageHeaderComponent.new(title: "下次訂購", subtitle: "共 #{@merchants.size} 間") %>
+<% end %>
+
+<% if @merchants.any? %>
+  <div class="grid gap-3 md:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] md:gap-4">
+    <% @merchants.each do |merchant| %>
+      <%= render MerchantCardComponent.new(merchant: merchant) %>
+    <% end %>
+  </div>
+<% else %>
+  <%= render(EmptyStateComponent.new(title: "還沒有下次要訂的店家")) do |empty| %>
+    <% empty.with_action { link_to "去看看店家", merchants_path, class: "btn btn-primary" } %>
+    點店家卡片右上角的書籤，就會加到這裡，下次訂餐時從這裡挑。
+  <% end %>
+<% end %>

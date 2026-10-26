@@ -5,12 +5,12 @@ class SidebarComponentTest < ViewComponent::TestCase
     render_inline(SidebarComponent.new(current_path: path, counts: counts))
   end
 
-  test "五個項目，順序固定，連到對應頁面" do
+  test "六個項目，順序固定，連到對應頁面" do
     render_sidebar
 
     links = page.all("nav a").map { |a| [ a.text.strip, a[:href] ] }
     assert_equal(
-      [ [ "全部店家", "/" ], [ "瀏覽歷史", "/history" ], [ "收藏", "/favorites" ], [ "已詢問", "/inquiries" ], [ "已訂購", "/orders" ] ],
+      [ [ "全部店家", "/" ], [ "瀏覽歷史", "/history" ], [ "收藏", "/favorites" ], [ "下次訂購", "/shortlist" ], [ "已詢問", "/inquiries" ], [ "已訂購", "/orders" ] ],
       links
     )
   end
@@ -36,7 +36,7 @@ class SidebarComponentTest < ViewComponent::TestCase
   end
 
   test "其他頁面各自只有自己是目前頁面" do
-    { "/history" => "瀏覽歷史", "/favorites" => "收藏", "/inquiries" => "已詢問", "/orders" => "已訂購" }.each do |path, label|
+    { "/history" => "瀏覽歷史", "/favorites" => "收藏", "/shortlist" => "下次訂購", "/inquiries" => "已詢問", "/orders" => "已訂購" }.each do |path, label|
       render_sidebar(path)
       assert_selector "a[aria-current=page]", text: label, count: 1
       assert_no_selector "a[aria-current=page]", text: "全部店家"
@@ -50,10 +50,11 @@ class SidebarComponentTest < ViewComponent::TestCase
   end
 
   test "顯示各項目的數量，0 或沒給就不顯示" do
-    render_sidebar("/", { history: 8, favorites: 3, inquiries: 0, orders: nil })
+    render_sidebar("/", { history: 8, favorites: 3, shortlist: 2, inquiries: 0, orders: nil })
 
     assert_selector "a", text: /瀏覽歷史\s*8/
     assert_selector "a", text: /收藏\s*3/
+    assert_selector "a", text: /下次訂購\s*2/
     assert_no_selector "a", text: /已詢問\s*\d/
     assert_no_selector "a", text: /已訂購\s*\d/
   end
@@ -61,8 +62,8 @@ class SidebarComponentTest < ViewComponent::TestCase
   test "每個項目都是 44px 高、圖示是裝飾（aria-hidden）" do
     render_sidebar
 
-    assert_selector "a.min-h-11", count: 5
-    assert_selector "a svg[aria-hidden=true]", count: 5
+    assert_selector "a.min-h-11", count: 6
+    assert_selector "a svg[aria-hidden=true]", count: 6
   end
 
   test "每個項目都有圖示與路由" do
