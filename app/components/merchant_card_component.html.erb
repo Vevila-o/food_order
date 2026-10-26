@@ -50,12 +50,16 @@
     </div>
   </dl>
 
-  <%# 左下角；滑鼠移到整張卡片（或鍵盤聚焦連結）時箭頭向右滑，用 cubic-bezier 做出微過衝的彈性曲線 %>
-  <%= link_to helpers.merchant_path(merchant), data: { turbo_frame: "_top" },
-        class: "tap-target mt-auto inline-flex items-center gap-1.5 self-start text-sm font-medium" do %>
-    查看菜單與建議搭配
-    <span class="inline-flex transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover/card:translate-x-2 group-focus-within/card:translate-x-2 motion-reduce:transition-none motion-reduce:transform-none">
-      <%= render IconComponent.new(name: :arrow_right, size: 16) %>
-    </span>
-  <% end %>
+  <%# 左下角的灰色「查看」。滑鼠移到整張卡片（或鍵盤聚焦連結）時，箭頭沿 cubic-bezier 曲線向右滑，
+      滑出容器右緣（overflow-x-clip 裁掉）而消失；100cqw = 這個 @container 的寬度，所以距離會跟著卡片寬度走 %>
+  <div class="@container mt-auto overflow-x-clip">
+    <%= link_to helpers.merchant_path(merchant), data: { turbo_frame: "_top" },
+          aria: { label: "查看#{merchant.name}的菜單與建議搭配" },
+          class: "tap-target inline-flex items-center gap-1.5 text-sm font-medium text-muted" do %>
+      查看
+      <span class="inline-flex transition-transform duration-700 ease-[cubic-bezier(0.65,0,0.35,1)] group-hover/card:translate-x-[100cqw] group-focus-within/card:translate-x-[100cqw] motion-reduce:transition-none motion-reduce:transform-none">
+        <%= render IconComponent.new(name: :arrow_right, size: 16) %>
+      </span>
+    <% end %>
+  </div>
 </article>
