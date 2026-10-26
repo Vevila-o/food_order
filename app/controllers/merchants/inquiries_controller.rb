@@ -35,7 +35,8 @@ module Merchants
     def set_pair
       @event = Event.current
       # partner_id：沒帶 = 用已存的組；空字串 = 明確沒有搭檔
-      @pair = InquiryPair.new(event: @event, merchant: @merchant, partner_id: scalar_param(:partner_id), quantities: quantities_param)
+      @pair = InquiryPair.new(event: @event, merchant: @merchant, partner_id: scalar_param(:partner_id), quantities: quantities_param,
+                              message_edits: message_edits_param)
     end
 
     # 沒有 quantities 參數 = 第一次打開（套用既有詢問單的品項）；有但不是 Hash（?quantities=oops）當作空的
@@ -43,6 +44,11 @@ module Merchants
       return unless params.key?(:quantities)
 
       params.permit(quantities: {})[:quantities].to_h
+    end
+
+    # 手動改過的訊息 { 店家 id => 文字 }：只有按「完成」或聯絡按鈕時 JavaScript 才會帶；陣列、巢狀 Hash 會被丟掉
+    def message_edits_param
+      params.permit(message_edits: {})[:message_edits].to_h.select { |_, value| value.is_a?(String) }
     end
 
     # 只收純量（陣列、Hash 一律當沒帶）

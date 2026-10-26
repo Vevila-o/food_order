@@ -75,6 +75,94 @@ class InquiryFormTest < ActiveSupport::TestCase
     assert_includes form({ @food.id.to_s => "1" }).message, "發票統一編號：12345678"
   end
 
+  # --- 手動編輯訊息 ---
+
+  def edited_form(text, quantities = { @food.id.to_s => "2" })
+    InquiryForm.new(event: @event, merchant: @merchant, quantities: quantities, message_edit: text)
+  end
+
+  test "手動改過的訊息：預覽、儲存都用改過的版本，並記錄為已編輯" do
+    f = edited_form("您好，想訂 2 個便當，麻煩了！")
+
+    assert_equal "您好，想訂 2 個便當，麻煩了！", f.message
+    assert f.message_edited?
+    inquiry = f.save
+    assert_equal "您好，想訂 2 個便當，麻煩了！", inquiry.message_text
+    assert inquiry.message_edited?
+  end
+
+  test "改過的訊息和自動產生的一樣：當作沒改" do
+    generated = edited_form(nil).generated_message
+
+    f = edited_form(generated)
+
+    assert_not f.message_edited?
+    assert_not f.save.message_edited?
+  end
+
+  test "編輯內容的前後空白與換行格式會整理" do
+    f = edited_form("  第一行\r\n第二行  \n")
+
+    assert_equal "第一行\n第二行", f.message
+  end
+
+  test "空白的編輯內容當作沒編輯" do
+    assert_not edited_form("   ").message_edited?
+  end
+
+  test "訊息最多 2000 字" do
+    f = edited_form("字" * (InquiryForm::MAX_MESSAGE_LENGTH + 1))
+
+    assert_not f.valid?
+    assert_includes f.errors.full_messages, "訊息最多 2000 字"
+    assert edited_form("字" * InquiryForm::MAX_MESSAGE_LENGTH).valid?
+  end
+
+  test "已存的編輯版本：品項與數量不變就繼續沿用（重新打開仍是改過的）" do
+    edited_form("自訂訊息").save
+
+    reopened = InquiryForm.new(event: @event, merchant: @merchant)
+
+    assert reopened.message_edited?
+    assert_equal "自訂訊息", reopened.message
+    assert_equal "自訂訊息", InquiryForm.new(event: @event, merchant: @merchant, quantities: { @food.id.to_s => "2" }).message
+  end
+
+  test "數量變了：改回自動產生，不會把過期的內容複製出去，存檔後也不再是已編輯" do
+    edited_form("自訂訊息：2 個便當").save
+
+    f = InquiryForm.new(event: @event, merchant: @merchant, quantities: { @food.id.to_s => "5" })
+
+    assert_not f.message_edited?
+    assert_includes f.message, "- 雞腿便當 × 5 份"
+    inquiry = f.save
+    assert_not inquiry.message_edited?
+    assert_includes inquiry.message_text, "× 5 份"
+  end
+
+  test "換品項也算變了" do
+    edited_form("自訂訊息").save
+
+    f = InquiryForm.new(event: @event, merchant: @merchant, quantities: { @drink.id.to_s => "2" })
+
+    assert_not f.message_edited?
+  end
+
+  test "再存一次沒帶編輯、品項不變：維持已編輯的版本" do
+    edited_form("自訂訊息").save
+
+    again = InquiryForm.new(event: @event, merchant: @merchant, quantities: { @food.id.to_s => "2" }).save
+
+    assert_equal "自訂訊息", again.message_text
+    assert again.message_edited?
+  end
+
+  test "新的編輯覆蓋舊的編輯" do
+    edited_form("第一版").save
+
+    assert_equal "第二版", edited_form("第二版").save.message_text
+  end
+
   # --- 預算 ---
 
   test "預算：只算這一家，不含本場其他店家的詢問單" do
