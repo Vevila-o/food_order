@@ -33,10 +33,11 @@ bin/rails db:seed            # 種子資料
 bin/rails test                         # 全部測試
 bin/rails test test/models             # 指定目錄
 bin/rails test test/models/merchant_test.rb   # 單一檔案
-bin/rails test:system                  # 系統測試（需要 Chrome）
+bin/rails test:system                  # 系統測試（M2 加入，需要 Chrome）
+bin/ci                                 # 一次跑完 RuboCop、審計、Brakeman、測試
 ```
 
-外部 API 一律用 WebMock + VCR 錄製回放，測試不得打真實 API。
+外部 API 一律用 WebMock + VCR 錄製回放，測試不得打真實 API（`test/test_helper.rb` 已設定 `record: :none`）。Minitest 6 沒有 `stub`，環境變數與 `Rails.env` 用 test_helper 的 `with_env` / `with_rails_env`。整合測試的 Basic Auth 用 `basic_auth_headers`。
 
 ### 檢查與資安
 
@@ -113,7 +114,7 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 
 | 階段 | 內容 | 狀態 |
 | --- | --- | --- |
-| M1 骨架 | Rails、Docker、GitHub Actions、存取保護、daisyUI theme | 進行中 |
+| M1 骨架 | Rails、Docker、GitHub Actions、存取保護、daisyUI theme | 完成（Docker image 尚未實際 build 驗證） |
 | M2 商家與訂單 | 手動新增店家、卡片與篩選、收藏 / 候選、詳情頁、訂單詢問產生器 | 未開始 |
 | M3 人數與日期 | KKTIX Webhook、總預算、人數變動提示、Ruby Jam 日期倒數 | 未開始 |
 | M4 AI | 菜單照片 / 網址解析、建議搭配 | 未開始 |
@@ -121,4 +122,4 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 
 ## CI（GitHub Actions）
 
-順序：Brakeman → bundler-audit → importmap audit → gitleaks → RuboCop → 測試（含 PostgreSQL service）。任一失敗不合併、不部署。main 分支保護：CI 通過才能合併；Dependabot 已開啟。
+Job：scan_ruby（Brakeman 有警告即失敗 + bundler-audit）、scan_secrets（gitleaks）、scan_js（importmap audit）、lint（RuboCop）、test（含 PostgreSQL service）。系統測試 job 待 M2 有系統測試時再加。任一失敗不合併、不部署。main 分支保護：CI 通過才能合併；Dependabot 已開啟。
