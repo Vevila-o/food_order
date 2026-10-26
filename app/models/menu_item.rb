@@ -2,7 +2,8 @@ class MenuItem < ApplicationRecord
   # 「近 4 個月」= 120 天（確認項 #4）；超過的項目不可選，日期不明的也不可選
   FRESH_DAYS = 120
 
-  belongs_to :merchant
+  # 菜單變動時更新店家的 updated_at（列表依「最近更新」排序）
+  belongs_to :merchant, touch: true
   belongs_to :source, class_name: "MerchantSource", optional: true
 
   enum :category, { food: "food", drink: "drink" }, prefix: true, validate: true
@@ -17,22 +18,25 @@ class MenuItem < ApplicationRecord
   scope :stale, -> { where(menu_date: ...(Date.current - FRESH_DAYS)) }
   scope :date_unknown, -> { where(menu_date: nil) }
 
+  # 120 天規則只在這裡定義一次：日期 → :fresh / :stale / :unknown
+  def self.freshness_of(date)
+    if date.nil? then :unknown
+    elsif date < Date.current - FRESH_DAYS then :stale
+    else :fresh
+    end
+  end
+
   def date_unknown? = menu_date.nil?
 
-  def stale? = menu_date.present? && menu_date < Date.current - FRESH_DAYS
+  def stale? = freshness == :stale
 
-  def fresh? = !date_unknown? && !stale?
+  def fresh? = freshness == :fresh
 
   # 只有新鮮的菜單項目能進訂單詢問產生器
   alias_method :orderable?, :fresh?
 
   # :fresh / :stale（菜單可能過期）/ :unknown（日期不明）
-  def freshness
-    if date_unknown? then :unknown
-    elsif stale? then :stale
-    else :fresh
-    end
-  end
+  def freshness = self.class.freshness_of(menu_date)
 
   # 整箱、整桶的約略每人單價；沒填 servings 時為 nil
   def price_per_serving

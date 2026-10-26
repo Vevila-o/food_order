@@ -14,6 +14,12 @@ class Merchant < ApplicationRecord
   enum :delivers_at_19, { yes: "yes", no: "no", unknown: "unknown" }, prefix: true, validate: true
   enum :delivers_to_daan, { yes: "yes", no: "no", unknown: "unknown" }, prefix: true, validate: true
 
+  # 菜單與來源在店家表單中一起編輯。完全空白的列（品名與價格都沒填）會被忽略。
+  accepts_nested_attributes_for :menu_items, allow_destroy: true,
+    reject_if: ->(attrs) { attrs.values_at("name", "price").all?(&:blank?) }
+  accepts_nested_attributes_for :sources, allow_destroy: true,
+    reject_if: ->(attrs) { attrs["url"].blank? }
+
   before_validation :normalize_contacts
 
   validates :name, presence: true
@@ -24,6 +30,7 @@ class Merchant < ApplicationRecord
   validates :lat, numericality: { greater_than_or_equal_to: -90, less_than_or_equal_to: 90 }, allow_nil: true
   validates :lng, numericality: { greater_than_or_equal_to: -180, less_than_or_equal_to: 180 }, allow_nil: true
   validates :line_id, format: { with: /\A[@~][\w.\-]+\z/, message: "必須以 @（官方帳號）或 ~（個人 ID）開頭" }, allow_blank: true
+  validates :threads, format: { with: /\A[\w.]+\z/, message: "只能包含英數字、底線與句點" }, allow_blank: true
   validates :instagram, format: { with: /\A[\w.]+\z/, message: "只能包含英數字、底線與句點" }, allow_blank: true
   validates :messenger_id, format: { with: /\A[\w.\-]+\z/, message: "只能包含英數字、底線、句點與連字號" }, allow_blank: true
   validates :phone, format: { with: /\A[\d+\-\s()#]+\z/, message: "只能包含數字與 + - ( ) 空白" }, allow_blank: true
@@ -36,6 +43,10 @@ class Merchant < ApplicationRecord
   # 「可 19:00 外送」：排除明確不可，待確認的也顯示（否則清單幾乎全空）
   scope :possibly_delivers_at_19, -> { where.not(delivers_at_19: "no") }
   scope :possibly_delivers_to_daan, -> { where.not(delivers_to_daan: "no") }
+  # 「大安區內 / 可送大安區」：行政區是大安區，或沒有明確表示不能送大安區（外區店家待確認也顯示）
+  scope :in_or_delivers_to_daan, -> { where(district: "大安區").or(possibly_delivers_to_daan) }
+  # 菜單在 4 個月內：至少有一個新鮮的菜單項目
+  scope :with_fresh_menu, -> { where(id: MenuItem.fresh.select(:merchant_id)) }
   scope :price_per_person_within, ->(limit) { where(price_per_person_min: ..limit) }
   scope :ordered_before, -> { where(id: OrderRecord.select(:merchant_id)) }
   scope :never_ordered, -> { where.not(id: OrderRecord.select(:merchant_id)) }
@@ -70,6 +81,73 @@ class Merchant < ApplicationRecord
     (EARTH_RADIUS_KM * 2 * Math.asin(Math.sqrt(a))).round(2)
   end
 
+  # 收藏與下次候選是兩個獨立的開關。不算「更新店家」，所以用 update_columns：
+  # 不改 updated_at（列表依最近更新排序，按一下收藏不該讓順序跳動），也不跑驗證。
+  def favorite!(value = true)
+    update_columns(favorited: value)
+  end
+
+  # 加入候選：排在候選名單最後（position = 目前最大值 + 1）；已在候選就什麼都不做
+  def add_to_shortlist!
+    return if shortlisted?
+
+    position = (Merchant.where(shortlisted: true).maximum(:shortlist_position) || 0) + 1
+    update_columns(shortlisted: true, shortlist_position: position)
+  end
+
+  # 移出候選：清掉排序位置，備註保留（之後再加回來還在）
+  def remove_from_shortlist!
+    update_columns(shortlisted: false, shortlist_position: nil)
+  end
+
+  # 每人估價（M2-b 決定）：手填優先；沒填就用「新鮮菜單」推算最便宜餐食 + 最便宜飲料；
+  # 只賣飲料的店沒有每人估價（改看 bulk_drink_item 的單價 / 單位）。都算不出來時為 nil（估價未填）。
+  PriceEstimate = Data.define(:min, :max, :source) # source: :manual / :menu
+
+  def price_estimate
+    if price_per_person_min
+      return PriceEstimate.new(min: price_per_person_min, max: price_per_person_max || price_per_person_min, source: :manual)
+    end
+    return unless offers_food
+
+    fresh = menu_items.select(&:fresh?)
+    food = fresh.select(&:category_food?).map(&:price).min
+    return unless food
+
+    drink = offers_drink ? fresh.select(&:category_drink?).map(&:price).min : nil
+    total = food + drink.to_i
+    PriceEstimate.new(min: total, max: total, source: :menu)
+  end
+
+  # 只賣飲料的店：最便宜的新鮮飲料項目（顯示「NT$360 / 箱」）
+  def bulk_drink_item
+    return unless drink_only?
+
+    menu_items.select { |item| item.fresh? && item.category_drink? }.min_by(&:price)
+  end
+
+  # 店家最新的菜單日期（卡片顯示用）；沒有菜單或日期都不明時為 nil
+  def latest_menu_date = menu_items.map(&:menu_date).compact.max
+
+  # 以最新的菜單日期判斷：沒有菜單 / 日期不明 → :unknown
+  def menu_freshness = MenuItem.freshness_of(latest_menu_date)
+
+  # 確認菜單仍有效：該店所有菜單項目的日期改為今天，並記錄驗證時間
+  def verify_menu!(on: Date.current)
+    transaction do
+      menu_items.update_all(menu_date: on, updated_at: Time.current)
+      update!(last_verified_at: Time.current)
+    end
+  end
+
+  # 可能重複的店家：電話（只比數字）或 Instagram 帳號與其他店家相同。只提醒，不擋存檔。
+  def possible_duplicates
+    others = Merchant.where.not(id: id)
+    by_phone = phone.present? ? others.where.not(phone: nil).select { |m| digits(m.phone) == digits(phone) } : []
+    by_instagram = instagram.present? ? others.where("LOWER(instagram) = ?", instagram.downcase).to_a : []
+    (by_phone + by_instagram).uniq
+  end
+
   # 線上聯絡管道，順序固定：LINE → Instagram → Messenger → 電話（Threads 沒有私訊連結，不列入）。
   # 只回傳有資料的管道；沒有任何管道時回傳空陣列。
   def contact_links
@@ -83,8 +161,11 @@ class Merchant < ApplicationRecord
 
   private
 
+  def digits(value) = value.to_s.gsub(/\D/, "")
+
   def normalize_contacts
     self.instagram = instagram.to_s.strip.delete_prefix("@").presence
+    self.threads = threads.to_s.strip.delete_prefix("@").presence
     self.line_id = line_id.to_s.strip.presence
     self.messenger_id = messenger_id.to_s.strip.presence
     self.phone = phone.to_s.strip.presence

@@ -3,38 +3,58 @@
   themes: false;
 }
 
-/* Adobe Color「Summer」色票；色票偏淺，文字一律用深色 #1F3B3A（對比 ≥ 4.5:1） */
+/* 設計稿（Ruby Jam 訂餐助手 介面設計）的補充色票與字型。
+   - 頁面底色 #F4F9F9、卡片白色（base-100）；#B2D7DB 改作「soft」用在活動摘要卡與「只有餐」標籤
+   - 灰色輔助文字 muted #4E6463（白底 6.3:1、頁面底色 5.9:1）；不要放在 soft 上（只有 4.1:1）
+   - 字型用系統字型：iPhone / Mac 是 PingFang TC，沒有就退到 Noto Sans TC，不載入外部字型（CSP 只允許自己的網域） */
+@theme {
+  --font-sans: "PingFang TC", "Noto Sans TC", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --color-muted: #4e6463;
+  --color-soft: #b2d7db;
+  --color-accent-soft: #fdf1da;
+  --color-warning-soft: #f9e6dc;
+}
+
+/* Adobe Color「Summer」色票；色票偏淺，文字一律用深色（對比 ≥ 4.5:1） */
 @plugin "./daisyui-theme.mjs" {
   name: "rubyjam";
   default: true;
   color-scheme: light;
 
   --color-base-100: #ffffff;
-  --color-base-200: #b2d7db;
-  --color-base-300: #9cc8cd;
-  --color-base-content: #1f3b3a;
+  --color-base-200: #f4f9f9;
+  --color-base-300: #dcedee;
+  --color-base-content: #14302f;
 
   --color-primary: #5ebdb7;
-  --color-primary-content: #1f3b3a;
+  --color-primary-content: #14302f;
   --color-secondary: #f1ccb7;
-  --color-secondary-content: #1f3b3a;
+  --color-secondary-content: #3a2418;
   --color-accent: #f0ae33;
-  --color-accent-content: #1f3b3a;
-  --color-neutral: #1f3b3a;
+  --color-accent-content: #2e1f02;
+  --color-neutral: #14302f;
   --color-neutral-content: #ffffff;
 
-  --color-info: #5ebdb7;
-  --color-info-content: #1f3b3a;
+  --color-info: #b2d7db;
+  --color-info-content: #14302f;
   --color-success: #5ebdb7;
-  --color-success-content: #1f3b3a;
+  --color-success-content: #14302f;
   --color-warning: #d98c6e;
-  --color-warning-content: #1f3b3a;
+  --color-warning-content: #2a140b;
   --color-error: #d98c6e;
-  --color-error-content: #1f3b3a;
+  --color-error-content: #2a140b;
 
   --radius-selector: 1rem;
-  --radius-field: 0.5rem;
-  --radius-box: 0.75rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1rem;
+
+  /* 這幾個一定要定義：daisyUI 的 .btn 邊框是 border: var(--border) solid …，
+     元件尺寸依賴 --size-field / --size-selector。沒定義時按鈕會退回瀏覽器預設的 3px 粗黑框、尺寸也會跑掉。 */
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
 }
 
 /* iOS 適配：避開瀏海與 Home Bar */
@@ -57,4 +77,16 @@ textarea {
 .tap-target {
   min-height: 44px;
   min-width: 44px;
+}
+
+/* 頁面內容寬度：手機 20px 邊距、桌機 32px，最寬 1360px（設計稿） */
+@utility page-container {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1360px;
+  padding-inline: 1.25rem;
+
+  @media (min-width: 48rem) {
+    padding-inline: 2rem;
+  }
 }

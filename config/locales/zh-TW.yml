@@ -1,0 +1,134 @@
+# 欄位名稱、列舉文字等在地化。通用的驗證訊息（不能是空白字元等）由 rails-i18n 的 zh-TW 提供。
+zh-TW:
+  activerecord:
+    models:
+      merchant: 店家
+      menu_item: 菜單項目
+      merchant_source: 來源
+      event: 活動
+      registration_snapshot: 報名人數
+      order_inquiry: 詢問單
+      order_inquiry_item: 詢問單品項
+      order_record: 訂購紀錄
+      app_setting: 收餐設定
+    attributes:
+      merchant:
+        name: 店名
+        address: 地址
+        district: 行政區
+        lat: 緯度
+        lng: 經度
+        phone: 電話
+        line_id: LINE 帳號
+        instagram: Instagram 帳號
+        messenger_id: Messenger 粉專 ID
+        threads: Threads 帳號
+        offers_food: 販售餐食
+        offers_drink: 販售飲料
+        delivers_at_19: 19:00 外送
+        delivers_to_daan: 可送大安區
+        delivery_fee: 外送費
+        free_delivery_threshold: 滿額免運門檻
+        price_per_person_min: 每人估價（最低）
+        price_per_person_max: 每人估價（最高）
+        favorited: 收藏
+        shortlisted: 下次候選
+        shortlist_note: 候選備註
+        last_verified_at: 最後驗證時間
+      menu_item:
+        name: 品名
+        category: 類別
+        price: 價格
+        menu_date: 菜單日期
+        unit: 單位
+        servings: 可供人數
+      merchant_source:
+        url: 來源網址
+        platform: 平台
+      event:
+        title: 活動名稱
+        kktix_slug: KKTIX 活動代碼
+        held_on: 活動日期
+      registration_snapshot:
+        headcount: 報名人數
+      order_record:
+        ordered_on: 訂購日期
+        headcount: 人數
+        total: 金額
+        note: 備註
+      app_setting:
+        delivery_place_name: 收餐地點名稱
+        delivery_address: 收餐地址
+        delivery_floor: 樓層
+        recipient_name: 收件人
+        recipient_phone: 收件電話
+
+  activemodel:
+    models:
+      menu_import: 貼上菜單
+    attributes:
+      menu_import:
+        food_text: 餐食菜單
+        drink_text: 飲料菜單
+        menu_date: 菜單日期
+
+  # 列舉文字：enums.<model>.<attribute>.<value>，用 enum_text(record, :attribute) 取用
+  enums:
+    merchant:
+      delivers_at_19:
+        "yes": 可以
+        "no": 不行
+        unknown: 待確認
+      delivers_to_daan:
+        "yes": 可以
+        "no": 不行
+        unknown: 待確認
+    menu_item:
+      category:
+        food: 餐食
+        drink: 飲料
+    merchant_source:
+      platform:
+        threads: Threads
+        instagram: Instagram
+        google: Google
+        web: 網頁
+        manual: 手動輸入
+    order_inquiry:
+      status:
+        draft: 草稿
+        sent: 已按聯絡按鈕
+        confirmed: 已確認訂購
+      contacted_via:
+        line: LINE
+        instagram: Instagram
+        messenger: Messenger
+        phone: 電話
+    order_record:
+      source:
+        inquiry: 系統記錄
+        manual: 手動補登
+
+  # 店家類型標籤（Merchant#kind）
+  merchant_kind:
+    food_and_drink: 餐＋飲
+    food_only: 只有餐
+    drink_only: 僅飲料
+
+  # 菜單新鮮度（MenuItem#freshness）
+  menu_freshness:
+    fresh: 菜單有效
+    stale: 菜單可能過期
+    unknown: 日期不明
+
+  # 通用文字
+  common:
+    unknown_amount: 待確認
+    not_filled: 未填
+    yes: 是
+    "no": 否
+    save: 儲存
+    cancel: 取消
+    edit: 編輯
+    delete: 刪除
+    back: 返回

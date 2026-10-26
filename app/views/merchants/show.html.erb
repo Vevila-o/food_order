@@ -1,0 +1,127 @@
+<% content_for :title, "#{@merchant.name} · Ruby Jam 訂餐助手" %>
+<% content_for :header do %>
+  <%= render(PageHeaderComponent.new(title: @merchant.name, subtitle: [ @merchant.district, @merchant.address ].compact_blank.join(" ").presence)) do |header| %>
+    <% header.with_back_link { render BackLinkComponent.new(label: "返回列表", href: merchants_path) } %>
+    <% header.with_actions do %>
+      <%= render ToggleButtonComponent.new(merchant: @merchant, kind: :favorite) %>
+      <%= render ToggleButtonComponent.new(merchant: @merchant, kind: :shortlist) %>
+    <% end %>
+    <% header.with_summary do %>
+      <div class="flex flex-wrap items-center gap-1.5">
+        <%= render KindBadgeComponent.new(kind: @merchant.kind) %>
+        <%= render PriceEstimateComponent.new(merchant: @merchant) %>
+        <%= render(PillComponent.new(tone: :base)) { "最後驗證 #{format_date(@merchant.last_verified_at, fallback: '尚未驗證')}" } %>
+        <%= render OrderedDotComponent.new(ordered: @merchant.ordered_before?) %>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>
+
+<div class="flex max-w-2xl flex-col gap-3.5">
+  <section class="grid grid-cols-2 gap-3 rounded-2xl bg-base-100 p-4">
+    <div class="flex flex-col gap-0.5">
+      <span class="text-xs text-muted">19:00 外送</span>
+      <% if @merchant.delivers_at_19_unknown? %>
+        <span><%= render(PillComponent.new(tone: :secondary)) { enum_text(@merchant, :delivers_at_19) } %></span>
+      <% else %>
+        <span class="text-[15px] font-bold"><%= enum_text(@merchant, :delivers_at_19) %></span>
+      <% end %>
+    </div>
+    <div class="flex flex-col gap-0.5">
+      <span class="text-xs text-muted">外送費</span>
+      <% if @merchant.delivery_fee.nil? %>
+        <span><%= render(PillComponent.new(tone: :secondary)) { delivery_fee_text(@merchant) } %></span>
+      <% else %>
+        <span class="text-[15px] font-bold"><%= delivery_fee_text(@merchant) %></span>
+      <% end %>
+    </div>
+    <div class="flex flex-col gap-0.5">
+      <span class="text-xs text-muted">可送大安區</span>
+      <span class="text-[15px] font-bold"><%= enum_text(@merchant, :delivers_to_daan) %></span>
+    </div>
+    <div class="col-span-2 flex flex-col gap-1.5">
+      <span class="text-xs text-muted">聯絡方式</span>
+      <% if @merchant.contact_links.any? %>
+        <div class="flex flex-wrap gap-2">
+          <% @merchant.contact_links.each do |channel, url| %>
+            <%= link_to channel_label(channel), url, rel: "noopener noreferrer",
+                  class: "inline-flex min-h-11 items-center rounded-full border border-soft px-3 text-[13px] font-medium" %>
+          <% end %>
+        </div>
+      <% else %>
+        <p>尚無聯絡方式，請到來源網址查看。</p>
+      <% end %>
+      <% if @merchant.threads.present? %>
+        <p class="text-sm text-muted">Threads：<%= @merchant.threads %>（沒有私訊連結，僅供參考）</p>
+      <% end %>
+    </div>
+    <p class="col-span-2 text-xs text-muted">19:00 能否外送與外送費多半沒有公開資料，會在詢問訊息中一併向店家確認。</p>
+  </section>
+
+  <section class="flex flex-col gap-2.5 rounded-2xl border-2 border-accent bg-base-100 p-4">
+    <h2 class="text-base font-bold">建議搭配</h2>
+    <p class="text-muted">之後會依人數與每人 NT$100 預算建議餐點搭配（優先「一杯飲料＋一份餐」，其次「只有餐」）。</p>
+  </section>
+
+  <section class="flex flex-col gap-1 rounded-2xl bg-base-100 p-4">
+    <div class="flex flex-wrap items-center justify-between gap-2 pb-1.5">
+      <h2 class="text-base font-bold">菜單</h2>
+      <div class="flex flex-wrap gap-2">
+        <%= link_to "貼上菜單", new_merchant_menu_import_path(@merchant), class: "btn btn-sm btn-secondary" %>
+        <% if @merchant.menu_items.any? %>
+          <%= button_to "確認菜單仍有效", verify_menu_merchant_path(@merchant), method: :post, class: "btn btn-sm btn-primary",
+                form: { data: { turbo_confirm: "確認這間店的菜單與價格目前仍然有效？所有項目的菜單日期會改為今天。" } } %>
+        <% end %>
+      </div>
+    </div>
+    <% if @merchant.menu_items.any? %>
+      <ul class="divide-y divide-base-200">
+        <% @merchant.menu_items.sort_by(&:id).each do |item| %>
+          <li class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2.5 text-sm <%= 'text-muted' unless item.fresh? %>">
+            <div>
+              <span class="font-medium"><%= item.name %></span>
+              <span class="text-xs text-muted">（<%= enum_text(item, :category) %>）</span>
+              <% if item.servings %>
+                <div class="text-xs text-muted">可供 <%= item.servings %> 人，約每人 <%= format_money(item.price_per_serving) %></div>
+              <% end %>
+            </div>
+            <div class="text-right">
+              <div class="font-bold tabular-nums"><%= format_money(item.price) %><%= " / #{item.unit}" if item.unit.present? %></div>
+              <div class="flex items-center justify-end gap-1.5 text-xs">
+                <span class="text-muted"><%= format_date(item.menu_date, fallback: "日期不明") %></span>
+                <% unless item.fresh? %><%= render FreshnessBadgeComponent.new(freshness: item.freshness) %><% end %>
+              </div>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-muted">還沒有菜單項目。</p>
+    <% end %>
+  </section>
+
+  <section class="flex flex-col gap-1 rounded-2xl bg-base-100 p-4">
+    <h2 class="mb-1 text-base font-bold">資料來源</h2>
+    <% if @merchant.sources.any? %>
+      <ul class="break-all">
+        <% @merchant.sources.each do |source| %>
+          <% next if source.url.blank? %>
+          <li>
+            <%= link_to source.url, class: "tap-target flex items-center justify-between gap-2 text-[13px]", target: "_blank", rel: "noopener noreferrer" do %>
+              <span><%= enum_text(source, :platform) %> · <%= source.url %></span>
+              <%= render IconComponent.new(name: :external, size: 14) %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-muted">尚未填寫來源網址。</p>
+    <% end %>
+  </section>
+
+  <div class="flex flex-wrap gap-3 pb-6">
+    <%= link_to "編輯", edit_merchant_path(@merchant), class: "btn btn-primary" %>
+    <%= button_to "刪除", merchant_path(@merchant), method: :delete, class: "btn btn-ghost",
+          form: { data: { turbo_confirm: "確定要刪除「#{@merchant.name}」嗎？" } } %>
+  </div>
+</div>

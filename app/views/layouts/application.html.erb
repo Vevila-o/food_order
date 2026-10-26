@@ -23,8 +23,11 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="bg-base-100 text-base-content min-h-dvh">
-    <main class="container mx-auto px-4 py-6">
+  <body class="bg-base-200 text-base-content min-h-dvh">
+    <%# 每頁自己決定頁首（PageHeaderComponent），用 content_for :header 放進來 %>
+    <%= yield :header %>
+    <main class="page-container py-4">
+      <%= render "shared/flash" %>
       <%= yield %>
     </main>
   </body>

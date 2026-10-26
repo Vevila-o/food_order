@@ -1,0 +1,28 @@
+<section class="flex w-full flex-col gap-2.5 rounded-2xl bg-soft p-4 md:max-w-xl" aria-label="下一場活動">
+  <div class="flex flex-wrap items-baseline justify-between gap-2">
+    <span class="text-[13px] font-medium">下一場 Ruby Jam · <%= date_text %></span>
+    <span class="rounded-full bg-base-100 px-2 py-0.5 text-xs font-medium"><%= event.delivery_window_label %> 送達</span>
+  </div>
+
+  <dl class="grid grid-cols-2 gap-2">
+    <div class="flex flex-col gap-0.5 rounded-xl bg-base-100 px-3 py-2.5">
+      <dt class="text-xs text-muted">報名人數</dt>
+      <dd class="text-[22px] font-bold tabular-nums"><%= headcount_text %></dd>
+    </div>
+    <div class="flex flex-col gap-0.5 rounded-xl bg-base-100 px-3 py-2.5">
+      <dt class="text-xs text-muted">總預算（× NT$100）</dt>
+      <dd class="text-[22px] font-bold tabular-nums"><%= budget_text %></dd>
+    </div>
+  </dl>
+
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <% if adjustment_text %>
+      <%= render(PillComponent.new(tone: :warning)) { adjustment_text } %>
+    <% else %>
+      <span></span>
+    <% end %>
+    <%= link_to event.kktix_attendees_url, class: "tap-target inline-flex items-center gap-1 text-[13px] font-medium", target: "_blank", rel: "noopener noreferrer" do %>
+      KKTIX 後台 <%= render IconComponent.new(name: :external, size: 14) %>
+    <% end %>
+  </div>
+</section>

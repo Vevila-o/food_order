@@ -199,4 +199,222 @@ class MerchantTest < ActiveSupport::TestCase
       merchant.destroy!
     end
   end
+
+  # --- 每人估價（手填優先，沒填用新鮮菜單推算） ---
+
+  test "有手填估價就用手填" do
+    merchant = create(:merchant, price_per_person_min: 80, price_per_person_max: 100)
+    create(:menu_item, merchant: merchant, price: 200)
+
+    estimate = merchant.reload.price_estimate
+
+    assert_equal [ 80, 100, :manual ], [ estimate.min, estimate.max, estimate.source ]
+  end
+
+  test "只填最低估價時最高等於最低" do
+    estimate = build(:merchant, price_per_person_min: 90).price_estimate
+
+    assert_equal [ 90, 90 ], [ estimate.min, estimate.max ]
+  end
+
+  test "沒手填：最便宜餐食 + 最便宜飲料" do
+    merchant = create(:merchant, :food_and_drink)
+    create(:menu_item, merchant: merchant, price: 95)
+    create(:menu_item, merchant: merchant, price: 120)
+    create(:menu_item, :drink, merchant: merchant, price: 35)
+    create(:menu_item, :drink, merchant: merchant, price: 50)
+
+    estimate = merchant.reload.price_estimate
+
+    assert_equal [ 130, :menu ], [ estimate.min, estimate.source ]
+  end
+
+  test "只有餐的店不把飲料算進估價" do
+    merchant = create(:merchant)
+    create(:menu_item, merchant: merchant, price: 90)
+    create(:menu_item, :drink, merchant: merchant, price: 30)
+
+    assert_equal 90, merchant.reload.price_estimate.min
+  end
+
+  test "過期或日期不明的菜單不參與推算，算不出來就是 nil" do
+    merchant = create(:merchant)
+    create(:menu_item, :stale, merchant: merchant)
+    create(:menu_item, :date_unknown, merchant: merchant)
+
+    assert_nil merchant.reload.price_estimate
+  end
+
+  test "只賣飲料的店沒有每人估價，改看最便宜的整箱 / 整桶單價" do
+    merchant = create(:merchant, :drink_only)
+    create(:menu_item, :drink, merchant: merchant, name: "冬瓜茶（一桶）", price: 280, unit: "桶", servings: 20)
+    create(:menu_item, :drink, merchant: merchant, name: "紅茶（一箱）", price: 360, unit: "箱", servings: 24)
+    merchant.reload
+
+    assert_nil merchant.price_estimate
+    assert_equal 280, merchant.bulk_drink_item.price
+  end
+
+  test "非僅飲料的店沒有 bulk_drink_item" do
+    assert_nil create(:merchant, :food_and_drink).bulk_drink_item
+  end
+
+  # --- 確認菜單仍有效 ---
+
+  test "確認菜單：所有項目日期改為今天並記錄驗證時間" do
+    merchant = create(:merchant)
+    stale = create(:menu_item, :stale, merchant: merchant)
+    unknown = create(:menu_item, :date_unknown, merchant: merchant)
+
+    merchant.verify_menu!
+
+    assert_equal Date.current, stale.reload.menu_date
+    assert_equal Date.current, unknown.reload.menu_date
+    assert_not_nil merchant.reload.last_verified_at
+    assert merchant.menu_items.all?(&:orderable?)
+  end
+
+  # --- 重複店家提醒 ---
+
+  test "電話只比數字，格式不同也視為重複" do
+    existing = create(:merchant, phone: "02-2345-6789")
+    candidate = build(:merchant, phone: "(02) 2345 6789")
+
+    assert_equal [ existing ], candidate.possible_duplicates
+  end
+
+  test "Instagram 帳號相同（不分大小寫）視為重複" do
+    existing = create(:merchant, instagram: "RubyJam")
+
+    assert_equal [ existing ], build(:merchant, instagram: "rubyjam").possible_duplicates
+  end
+
+  test "沒有電話與 Instagram 時沒有重複，且不會和自己比" do
+    create(:merchant)
+    merchant = create(:merchant, phone: "02-1111-2222")
+
+    assert_empty build(:merchant).possible_duplicates
+    assert_empty merchant.possible_duplicates
+  end
+
+  # --- 巢狀屬性 ---
+
+  test "表單送出的菜單列：完全空白的列被忽略" do
+    merchant = Merchant.create!(
+      name: "巢狀測試",
+      menu_items_attributes: {
+        "0" => { name: "雞腿飯", category: "food", price: "90", menu_date: Date.current.to_s },
+        "1" => { name: "", category: "food", price: "", menu_date: "" }
+      }
+    )
+
+    assert_equal 1, merchant.menu_items.count
+  end
+
+  test "只填品名沒填價格會驗證失敗" do
+    merchant = Merchant.new(name: "巢狀測試", menu_items_attributes: { "0" => { name: "雞腿飯", category: "food", price: "" } })
+
+    assert_not merchant.valid?
+  end
+
+  test "來源網址空白的列被忽略，非 https 的網址會被擋" do
+    assert_equal 0, Merchant.create!(name: "A", sources_attributes: { "0" => { platform: "manual", url: "" } }).sources.count
+
+    merchant = Merchant.new(name: "B", sources_attributes: { "0" => { platform: "manual", url: "http://example.com" } })
+    assert_not merchant.valid?
+  end
+
+  test "Threads 帳號會去掉開頭的 @" do
+    assert_equal "rubyjam", create(:merchant, threads: "@rubyjam").threads
+    assert_not build(:merchant, threads: "a/b").valid?
+  end
+
+  test "菜單變動時店家的 updated_at 會更新" do
+    merchant = create(:merchant)
+    merchant.update_column(:updated_at, 1.day.ago)
+
+    create(:menu_item, merchant: merchant)
+
+    assert_in_delta Time.current, merchant.reload.updated_at, 5
+  end
+
+  # --- 收藏與下次候選 ---
+
+  test "收藏與取消收藏" do
+    merchant = create(:merchant)
+
+    merchant.favorite!
+    assert merchant.reload.favorited
+
+    merchant.favorite!(false)
+    assert_not merchant.reload.favorited
+  end
+
+  test "收藏與候選不算更新店家：不改 updated_at，列表順序不會跳動" do
+    merchant = create(:merchant)
+    merchant.update_column(:updated_at, 5.days.ago)
+    before = merchant.reload.updated_at
+
+    merchant.favorite!
+    merchant.add_to_shortlist!
+    merchant.remove_from_shortlist!
+
+    assert_equal before, merchant.reload.updated_at
+  end
+
+  test "加入候選：排在候選名單最後" do
+    first = create(:merchant)
+    second = create(:merchant)
+    third = create(:merchant)
+
+    [ first, second, third ].each(&:add_to_shortlist!)
+
+    assert_equal [ 1, 2, 3 ], [ first, second, third ].map { |m| m.reload.shortlist_position }
+    assert_equal [ first, second, third ], Merchant.shortlisted.to_a
+  end
+
+  test "已在候選時再加入：什麼都不做，位置不變" do
+    merchant = create(:merchant)
+    merchant.add_to_shortlist!
+    create(:merchant).add_to_shortlist!
+
+    merchant.add_to_shortlist!
+
+    assert_equal 1, merchant.reload.shortlist_position
+  end
+
+  test "移出候選：清掉位置但保留備註" do
+    merchant = create(:merchant, shortlist_note: "上次反應不錯")
+    merchant.add_to_shortlist!
+
+    merchant.remove_from_shortlist!
+
+    assert_not merchant.reload.shortlisted
+    assert_nil merchant.shortlist_position
+    assert_equal "上次反應不錯", merchant.shortlist_note
+  end
+
+  test "移出後再加入：位置接在目前最後一個後面，不會撞號" do
+    a = create(:merchant)
+    b = create(:merchant)
+    c = create(:merchant)
+    [ a, b, c ].each(&:add_to_shortlist!)
+
+    b.remove_from_shortlist!
+    b.add_to_shortlist!
+
+    assert_equal [ a, c, b ], Merchant.shortlisted.to_a
+    assert_equal [ 1, 3, 4 ], Merchant.shortlisted.map(&:shortlist_position)
+  end
+
+  test "收藏與候選互相獨立" do
+    merchant = create(:merchant)
+
+    merchant.favorite!
+    assert_not merchant.reload.shortlisted
+
+    merchant.add_to_shortlist!
+    merchant.favorite!(false)
+    assert merchant.reload.shortlisted
+  end
 end

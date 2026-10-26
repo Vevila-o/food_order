@@ -1,0 +1,5 @@
+<%= form_with model: merchant, url: "#", method: :get do |f| %>
+  <%= render FieldComponent.new(form: f, attribute: :name, required: true, hint: hint) do %>
+    <%= f.text_field :name, class: "input w-full" %>
+  <% end %>
+<% end %>

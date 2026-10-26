@@ -1,0 +1,5 @@
+<div class="flex flex-wrap gap-2">
+  <% PillComponent::TONES.each_key do |tone| %>
+    <%= render(PillComponent.new(tone: tone)) { tone.to_s } %>
+  <% end %>
+</div>

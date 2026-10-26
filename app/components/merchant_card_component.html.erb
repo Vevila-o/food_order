@@ -1,0 +1,54 @@
+<article class="flex flex-col gap-2.5 rounded-2xl bg-base-100 p-4 shadow-sm" id="<%= helpers.dom_id(merchant) %>">
+  <div class="flex items-start justify-between gap-2">
+    <div class="flex min-w-0 flex-col gap-0.5">
+      <h2 class="text-[17px] font-bold leading-snug">
+        <%# 卡片在 Turbo Frame（merchant-list）裡，連結要跳出 frame；桌機開新分頁由 detail-link 處理 %>
+        <%= link_to merchant.name, helpers.merchant_path(merchant), class: "tap-target inline-flex items-center hover:underline",
+              data: { turbo_frame: "_top", controller: "detail-link" } %>
+      </h2>
+      <p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+        <% if area_text %><span><%= area_text %></span><% end %>
+        <%= render OrderedDotComponent.new(ordered: merchant.ordered_before?) %>
+      </p>
+    </div>
+    <div class="flex shrink-0 gap-1">
+      <%= render ToggleButtonComponent.new(merchant: merchant, kind: :favorite) %>
+      <%= render ToggleButtonComponent.new(merchant: merchant, kind: :shortlist) %>
+    </div>
+  </div>
+
+  <div class="flex flex-wrap gap-1.5">
+    <%= render KindBadgeComponent.new(kind: merchant.kind) %>
+    <%= render PriceEstimateComponent.new(merchant: merchant) %>
+    <%= render(PillComponent.new(tone: :base)) { menu_date_text } %>
+    <% if show_freshness? %>
+      <%= render FreshnessBadgeComponent.new(freshness: merchant.menu_freshness) %>
+    <% end %>
+  </div>
+
+  <dl class="grid grid-cols-2 gap-2 text-[13px]">
+    <div class="flex flex-col gap-0.5">
+      <dt class="text-xs text-muted">19:00 外送</dt>
+      <dd>
+        <% if delivers_at_19_known? %>
+          <span class="text-sm font-bold"><%= delivers_at_19_text %></span>
+        <% else %>
+          <%= render(PillComponent.new(tone: :secondary)) { delivers_at_19_text } %>
+        <% end %>
+      </dd>
+    </div>
+    <div class="flex flex-col gap-0.5">
+      <dt class="text-xs text-muted">外送費</dt>
+      <dd>
+        <% if delivery_fee_known? %>
+          <span class="text-sm font-bold"><%= delivery_fee_text %></span>
+        <% else %>
+          <%= render(PillComponent.new(tone: :secondary)) { delivery_fee_text } %>
+        <% end %>
+      </dd>
+    </div>
+  </dl>
+
+  <%= link_to "查看菜單與建議搭配 →", helpers.merchant_path(merchant), class: "tap-target inline-flex items-center self-start text-sm font-medium",
+        data: { turbo_frame: "_top", controller: "detail-link" } %>
+</article>

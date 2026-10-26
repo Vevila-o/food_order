@@ -1,0 +1,8 @@
+<% content_for :title, "新增店家 · Ruby Jam 訂餐助手" %>
+<% content_for :header do %>
+  <%= render(PageHeaderComponent.new(title: "新增店家")) do |header| %>
+    <% header.with_back_link { render BackLinkComponent.new(label: "返回列表", href: merchants_path) } %>
+  <% end %>
+<% end %>
+
+<%= render "form", merchant: @merchant %>
