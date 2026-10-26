@@ -1,0 +1,60 @@
+@import "tailwindcss";
+@plugin "./daisyui.mjs" {
+  themes: false;
+}
+
+/* Adobe Color「Summer」色票；色票偏淺，文字一律用深色 #1F3B3A（對比 ≥ 4.5:1） */
+@plugin "./daisyui-theme.mjs" {
+  name: "rubyjam";
+  default: true;
+  color-scheme: light;
+
+  --color-base-100: #ffffff;
+  --color-base-200: #b2d7db;
+  --color-base-300: #9cc8cd;
+  --color-base-content: #1f3b3a;
+
+  --color-primary: #5ebdb7;
+  --color-primary-content: #1f3b3a;
+  --color-secondary: #f1ccb7;
+  --color-secondary-content: #1f3b3a;
+  --color-accent: #f0ae33;
+  --color-accent-content: #1f3b3a;
+  --color-neutral: #1f3b3a;
+  --color-neutral-content: #ffffff;
+
+  --color-info: #5ebdb7;
+  --color-info-content: #1f3b3a;
+  --color-success: #5ebdb7;
+  --color-success-content: #1f3b3a;
+  --color-warning: #d98c6e;
+  --color-warning-content: #1f3b3a;
+  --color-error: #d98c6e;
+  --color-error-content: #1f3b3a;
+
+  --radius-selector: 1rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
+}
+
+/* iOS 適配：避開瀏海與 Home Bar */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+}
+
+/* 輸入框字級 ≥ 16px，避免 Safari 聚焦時自動放大 */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+/* 可點擊元素 ≥ 44×44 */
+.btn,
+.tap-target {
+  min-height: 44px;
+  min-width: 44px;
+}
