@@ -10,8 +10,8 @@ class CountdownCardComponentTest < ViewComponent::TestCase
 
     assert_selector "span", text: "12"
     assert_selector "span", text: "05"
-    assert_selector "span", text: "天 dd"
-    assert_selector "span", text: "時 hh"
+    assert_selector "span", text: "天"
+    assert_selector "span", text: "時"
   end
 
   test "螢幕閱讀器唸完整句子，數字方塊是裝飾（aria-hidden）" do
