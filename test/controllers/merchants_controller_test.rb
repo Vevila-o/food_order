@@ -103,12 +103,14 @@ class MerchantsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test "卡片連結跳出 Turbo Frame，並由 detail-link 決定是否開新分頁" do
+  test "卡片連結跳出 Turbo Frame，在同一個分頁換網址（不開新分頁）" do
     create(:merchant)
 
     get merchants_path
 
-    assert_select "article h2 a[data-turbo-frame=_top][data-controller=detail-link]"
+    assert_select "article h2 a[data-turbo-frame=_top]"
+    assert_select "article a[target]", count: 0
+    assert_select "article a[data-controller=detail-link]", count: 0
   end
 
   test "只認「本場預算」作為滿額免運的比較基準" do
