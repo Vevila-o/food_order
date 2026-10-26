@@ -206,7 +206,7 @@ class SidebarPagesTest < ActionDispatch::IntegrationTest
 
     get inquiries_path
 
-    assert_equal [ "較晚", "較早" ], css_select("tbody td a").map(&:text)
+    assert_equal [ "較晚", "較早" ], css_select("tbody td a").map(&:text).reject { |text| text == "開啟詢問" }
   end
 
   test "已詢問沒有資料" do

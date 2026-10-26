@@ -1,7 +1,7 @@
-<section class="flex flex-col gap-2 rounded-2xl bg-base-100 p-4" aria-label="詢問訊息">
-  <h2 class="text-base font-bold">詢問訊息</h2>
+<section class="flex flex-col gap-2 rounded-2xl bg-base-100 p-4" aria-label="<%= title %>">
+  <h2 class="text-base font-bold"><%= title %></h2>
   <% if notice %>
     <p class="rounded-xl bg-warning-soft px-3 py-2 text-sm font-medium" role="note"><%= notice %></p>
   <% end %>
-  <pre tabindex="0" class="whitespace-pre-wrap break-words rounded-xl bg-base-200 p-3 font-sans text-[15px] leading-relaxed select-all" data-inquiry-target="message"><%= text %></pre>
+  <pre id="<%= dom_id %>" tabindex="0" class="whitespace-pre-wrap break-words rounded-xl bg-base-200 p-3 font-sans text-[15px] leading-relaxed select-all" data-inquiry-message><%= text %></pre>
 </section>

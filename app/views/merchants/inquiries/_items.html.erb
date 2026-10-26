@@ -1,0 +1,47 @@
+<%# 一家店的品項與數量（主店與搭檔共用）。form：InquiryForm。 %>
+<% if form.orderable_items.empty? %>
+  <p class="py-3">這間店目前沒有可選的餐點：菜單還沒有項目，或日期超過 4 個月。</p>
+<% end %>
+
+<% { food: "餐食", drink: "飲料" }.each do |category, title| %>
+  <% items = form.orderable_items.select { |item| item.category.to_sym == category } %>
+  <% next if items.empty? %>
+  <fieldset class="mt-2">
+    <legend class="float-left mb-1 w-full text-sm font-bold text-muted"><%= title %></legend>
+    <ul class="clear-both divide-y divide-base-200">
+      <% items.each do |item| %>
+        <li class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-2.5">
+          <div class="min-w-0">
+            <div class="font-medium"><%= item.name %></div>
+            <div class="text-sm text-muted tabular-nums">
+              <%= format_money(item.price) %><%= " / #{item.unit}" if item.unit.present? %>
+              <% if item.servings %>· 可供 <%= item.servings %> 人<% end %>
+            </div>
+          </div>
+          <%= render StepperComponent.new(name: "quantities[#{item.id}]", value: form.quantity_for(item), label: item.name, headcount: headcount) %>
+        </li>
+      <% end %>
+    </ul>
+  </fieldset>
+<% end %>
+
+<% if form.unavailable_items.any? %>
+  <div class="mt-3 rounded-xl bg-base-200 p-3 text-sm">
+    <p class="mb-1 font-medium">這些項目不能選（菜單可能過期或日期不明）</p>
+    <ul class="text-muted">
+      <% form.unavailable_items.each do |item| %>
+        <li class="flex flex-wrap items-center gap-1.5 py-0.5">
+          <span><%= item.name %></span>
+          <%= render FreshnessBadgeComponent.new(freshness: item.freshness) %>
+        </li>
+      <% end %>
+    </ul>
+    <%= link_to "到店家頁確認菜單", merchant_path(form.merchant), class: "tap-target mt-1 inline-flex items-center font-medium underline" %>
+  </div>
+<% end %>
+
+<% if form.confirmed? %>
+  <p class="mt-2 text-sm font-medium">這間店已確認訂購，不能再修改詢問單。</p>
+<% elsif form.existing_inquiry %>
+  <p class="mt-2 text-sm text-muted">這場活動已有這間店的詢問單：<strong><%= enum_text(form.existing_inquiry, :status) %></strong>。重新儲存會覆蓋品項。</p>
+<% end %>

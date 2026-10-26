@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_27_000022) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_27_000023) do
   create_table "app_settings", force: :cascade do |t|
     t.boolean "singleton", default: true, null: false
     t.string "delivery_place_name"
@@ -129,6 +129,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_27_000022) do
     t.check_constraint "offers_food OR offers_drink", name: "merchants_offers_something"
   end
 
+  create_table "order_groups", force: :cascade do |t|
+    t.integer "event_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_id"], name: "index_order_groups_on_event_id"
+  end
+
   create_table "order_inquiries", force: :cascade do |t|
     t.integer "event_id", null: false
     t.integer "merchant_id", null: false
@@ -142,9 +149,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_27_000022) do
     t.datetime "sent_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "order_group_id"
     t.index ["event_id", "merchant_id"], name: "index_order_inquiries_on_event_id_and_merchant_id", unique: true
     t.index ["event_id"], name: "index_order_inquiries_on_event_id"
     t.index ["merchant_id"], name: "index_order_inquiries_on_merchant_id"
+    t.index ["order_group_id"], name: "index_order_inquiries_on_order_group_id"
     t.check_constraint "contacted_via IS NULL OR contacted_via IN ('line', 'instagram', 'messenger', 'phone')", name: "order_inquiries_contacted_via_values"
     t.check_constraint "status IN ('draft', 'sent', 'confirmed')", name: "order_inquiries_status_values"
     t.check_constraint "subtotal >= 0 AND (delivery_fee IS NULL OR delivery_fee >= 0) AND (total IS NULL OR total >= 0)", name: "order_inquiries_money_non_negative"
@@ -202,8 +211,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_27_000022) do
   add_foreign_key "menu_items", "merchant_sources", column: "source_id", on_delete: :nullify
   add_foreign_key "menu_items", "merchants"
   add_foreign_key "merchant_sources", "merchants"
+  add_foreign_key "order_groups", "events"
   add_foreign_key "order_inquiries", "events"
   add_foreign_key "order_inquiries", "merchants", on_delete: :restrict
+  add_foreign_key "order_inquiries", "order_groups"
   add_foreign_key "order_inquiry_items", "menu_items", on_delete: :nullify
   add_foreign_key "order_inquiry_items", "order_inquiries", on_delete: :cascade
   add_foreign_key "order_records", "events", on_delete: :nullify

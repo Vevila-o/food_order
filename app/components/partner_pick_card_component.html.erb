@@ -1,0 +1,44 @@
+<article class="flex flex-col gap-2.5 rounded-2xl bg-base-100 p-4 shadow-sm <%= 'ring-2 ring-primary' if selected? %>">
+  <div class="flex flex-col gap-0.5">
+    <h3 class="text-[17px] font-bold leading-snug"><%= merchant.name %></h3>
+    <p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+      <% if area_text %><span><%= area_text %></span><% end %>
+      <%= render OrderedDotComponent.new(ordered: merchant.ordered_before?) %>
+    </p>
+  </div>
+
+  <div class="flex flex-wrap gap-1.5">
+    <%= render KindBadgeComponent.new(kind: merchant.kind) %>
+    <%= render PriceEstimateComponent.new(merchant: merchant) %>
+    <%= render(PillComponent.new(tone: :base)) { menu_date_text } %>
+    <% if show_freshness? %><%= render FreshnessBadgeComponent.new(freshness: merchant.menu_freshness) %><% end %>
+    <% if inquired? %><%= render(PillComponent.new(tone: :soft)) { "已有詢問單" } %><% end %>
+  </div>
+
+  <dl class="grid grid-cols-2 gap-2 text-[13px]">
+    <div class="flex flex-col gap-0.5">
+      <dt class="text-xs text-muted">19:00 外送</dt>
+      <dd>
+        <% if delivers_at_19_known? %>
+          <span class="text-sm font-bold"><%= helpers.enum_text(merchant, :delivers_at_19) %></span>
+        <% else %>
+          <%= render(PillComponent.new(tone: :secondary)) { helpers.enum_text(merchant, :delivers_at_19) } %>
+        <% end %>
+      </dd>
+    </div>
+    <div class="flex flex-col gap-0.5">
+      <dt class="text-xs text-muted">外送費</dt>
+      <dd>
+        <% if delivery_fee_known? %>
+          <span class="text-sm font-bold"><%= helpers.delivery_fee_text(merchant) %></span>
+        <% else %>
+          <%= render(PillComponent.new(tone: :secondary)) { helpers.delivery_fee_text(merchant) } %>
+        <% end %>
+      </dd>
+    </div>
+  </dl>
+
+  <button type="button" class="btn btn-primary w-full" <%= "disabled" if disabled? %>
+          data-action="inquiry#pickPartner" data-inquiry-partner-id-param="<%= merchant.id %>"
+          aria-label="<%= button_label %>：<%= merchant.name %>"><%= button_label %></button>
+</article>

@@ -19,12 +19,6 @@ class BudgetSummaryComponentPreview < ViewComponent::Preview
     render_summary(subtotal: 1500, fee: nil)
   end
 
-  # 本場還有其他店家（餐點店 + 飲料店）：合計含其他店
-  def with_other_merchants
-    others = [ inquiry("【範例】大安涼飲批發", subtotal: 560, fee: 0), inquiry("【範例】公館義大利麵", subtotal: 400, fee: nil) ]
-    render_summary(subtotal: 700, fee: 60, others: others)
-  end
-
   # 還沒選餐點
   def nothing_selected
     render_summary(subtotal: 0, fee: 60, any_lines: false)
@@ -32,16 +26,12 @@ class BudgetSummaryComponentPreview < ViewComponent::Preview
 
   private
 
-  def render_summary(subtotal:, fee:, others: [], any_lines: true)
+  def render_summary(subtotal:, fee:, any_lines: true)
     merchant = PreviewMerchants.build(delivery_fee: fee)
     pricing = OrderPricing::Result.new(subtotal: subtotal, delivery_fee: fee, total: fee && subtotal + fee)
     event = Event.new(held_on: Date.current.next_occurring(:tuesday))
     event.define_singleton_method(:headcount) { 18 }
     mine = OrderInquiry.new(merchant: merchant, subtotal: subtotal, delivery_fee: fee, total: pricing.total, headcount_at_creation: 18)
-    render BudgetSummaryComponent.new(pricing: pricing, budget: EventBudget.new(event, inquiries: others + [ mine ]), others: others, any_lines: any_lines)
-  end
-
-  def inquiry(name, subtotal:, fee:)
-    OrderInquiry.new(merchant: PreviewMerchants.build(name: name), subtotal: subtotal, delivery_fee: fee, total: fee && subtotal + fee, headcount_at_creation: 18)
+    render BudgetSummaryComponent.new(pricing: pricing, budget: EventBudget.new(event, inquiries: [ mine ]), any_lines: any_lines)
   end
 end

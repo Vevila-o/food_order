@@ -1,11 +1,12 @@
-<section class="flex flex-col gap-2.5 rounded-2xl bg-base-100 p-4" aria-label="聯絡店家">
-  <h2 class="text-base font-bold">聯絡店家</h2>
+<section class="flex flex-col gap-2.5 rounded-2xl bg-base-100 p-4" aria-label="<%= title %>">
+  <h2 class="text-base font-bold"><%= title %></h2>
   <% if links.any? %>
     <p class="text-sm text-muted">按下按鈕會先複製訊息，再開啟對方的帳號，貼上後自行送出。系統不會自動傳訊息。</p>
     <div class="flex flex-wrap gap-2">
       <% links.each_with_index do |(channel, url), index| %>
         <button type="button" class="<%= button_class(index) %>" <%= "disabled" if disabled? %>
-                data-action="inquiry#contact" data-inquiry-channel-param="<%= channel %>" data-inquiry-href-param="<%= url %>">
+                data-action="inquiry#contact" data-inquiry-channel-param="<%= channel %>" data-inquiry-href-param="<%= url %>"
+                data-inquiry-message-id-param="<%= message_id %>" data-inquiry-merchant-id-param="<%= merchant_id %>">
           <%= helpers.channel_label(channel) %>
         </button>
       <% end %>
@@ -22,5 +23,5 @@
       <% end %>
     <% end %>
   <% end %>
-  <p class="text-sm font-medium" role="status" aria-live="polite" data-inquiry-target="status"></p>
+  <p class="text-sm font-medium" role="status" aria-live="polite" data-inquiry-status></p>
 </section>

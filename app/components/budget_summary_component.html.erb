@@ -8,25 +8,26 @@
     <dd class="text-right text-lg font-bold tabular-nums"><%= total_text %></dd>
   </dl>
 
+  <% if show_parts? %>
+    <ul class="flex flex-col gap-1 rounded-xl border border-base-300 p-3 text-sm" aria-label="各店明細">
+      <% parts.each do |part| %>
+        <li class="flex flex-wrap items-baseline justify-between gap-x-3">
+          <span class="font-medium"><%= part.name %></span>
+          <span class="text-muted tabular-nums">小計 <%= helpers.format_money(part.pricing.subtotal) %> · <%= part_fee_text(part) %> · <span class="font-bold text-base-content"><%= part_total_text(part) %></span></span>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
   <div class="flex flex-col gap-2 rounded-xl bg-base-200 p-3">
     <div class="flex flex-wrap items-baseline justify-between gap-2 text-sm">
       <span class="text-muted">本場總預算（<%= budget.headcount %> 人 × NT$<%= Event::PER_PERSON_BUDGET %>）</span>
       <span class="font-bold tabular-nums"><%= total_budget_text %></span>
     </div>
     <div class="flex flex-wrap items-baseline justify-between gap-2 text-sm">
-      <span class="text-muted">本場合計<%= "（含其他店家）" if others.any? %></span>
+      <span class="text-muted">預計合計</span>
       <span class="font-bold tabular-nums"><%= event_total_text %></span>
     </div>
-    <% if others.any? %>
-      <ul class="text-xs text-muted">
-        <% others.each do |inquiry| %>
-          <li class="flex justify-between gap-2">
-            <span class="truncate"><%= inquiry.merchant.name %></span>
-            <span class="tabular-nums"><%= inquiry.total ? helpers.format_money(inquiry.total) : "外送費待確認" %></span>
-          </li>
-        <% end %>
-      </ul>
-    <% end %>
     <% tone, text = status %>
     <div><%= render(PillComponent.new(tone: tone)) { text } %></div>
   </div>

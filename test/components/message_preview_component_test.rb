@@ -6,7 +6,7 @@ class MessagePreviewComponentTest < ViewComponent::TestCase
   test "原樣顯示訊息（pre），換行保留，前後沒有多餘空白" do
     render_inline(MessagePreviewComponent.new(text: TEXT))
 
-    pre = page.find("pre[data-inquiry-target=message]")
+    pre = page.find("pre[data-inquiry-message]")
     assert_equal TEXT, pre.native.text
   end
 
@@ -29,5 +29,19 @@ class MessagePreviewComponentTest < ViewComponent::TestCase
 
     render_inline(MessagePreviewComponent.new(text: TEXT, notice: "活動日期已過"))
     assert_selector "p[role=note]", text: "活動日期已過"
+  end
+
+  test "dom_id 與標題可指定（兩家並存時，每顆聯絡按鈕靠 id 找到自己那一則）" do
+    render_inline(MessagePreviewComponent.new(text: TEXT, dom_id: "inquiry-message-12", title: "詢問訊息 · 涼飲店"))
+
+    assert_selector "pre#inquiry-message-12"
+    assert_selector "h2", text: "詢問訊息 · 涼飲店"
+  end
+
+  test "預設 id 與標題" do
+    render_inline(MessagePreviewComponent.new(text: TEXT))
+
+    assert_selector "pre#inquiry-message"
+    assert_selector "h2", text: "詢問訊息"
   end
 end

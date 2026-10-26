@@ -50,6 +50,13 @@ class ContactButtonsComponentTest < ViewComponent::TestCase
   test "有狀態訊息區（複製結果會顯示在這裡）" do
     render_inline(ContactButtonsComponent.new(links: links(line_id: "@abc")))
 
-    assert_selector "p[role=status][aria-live=polite][data-inquiry-target=status]"
+    assert_selector "p[role=status][aria-live=polite][data-inquiry-status]"
+  end
+
+  test "按鈕帶「要複製哪則訊息」與「標哪一家」，標題可帶店名" do
+    render_inline(ContactButtonsComponent.new(links: links(line_id: "@abc"), message_id: "inquiry-message-12", merchant_id: 12, title: "聯絡店家 · 涼飲店"))
+
+    assert_selector "button[data-inquiry-message-id-param='inquiry-message-12'][data-inquiry-merchant-id-param='12']", text: "LINE"
+    assert_selector "h2", text: "聯絡店家 · 涼飲店"
   end
 end

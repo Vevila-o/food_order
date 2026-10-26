@@ -46,7 +46,7 @@ module Merchants
 
       assert_response :success
       assert_select "input[name='quantities[#{@food.id}]'][value='18']"
-      assert_select "pre[data-inquiry-target=message]", text: /- 雞腿便當 × 18 份/
+      assert_select "pre[data-inquiry-message]", text: /- 雞腿便當 × 18 份/
       assert_select "pre", text: /NT\$1,620/
       assert_select "dd", text: "免外送費"
       assert_select "button[data-action='inquiry#contact']:not([disabled])", count: 4
@@ -110,14 +110,16 @@ module Merchants
       assert_select "button[data-action='inquiry#contact']:not([disabled])", count: 4
     end
 
-    test "本場其他店家的詢問單計入合計" do
+    test "本場其他店家的詢問單不計入合計，也不列出" do
       other = create(:merchant, name: "涼飲店")
-      create(:order_inquiry, event: @event, merchant: other, subtotal: 500, delivery_fee: 0, total: 500)
+      create(:order_inquiry, event: @event, merchant: other, subtotal: 5000, delivery_fee: 0, total: 5000)
 
       get merchant_inquiry_path(@merchant, quantities: { @food.id => 10 })
 
-      assert_select "span", text: "本場合計（含其他店家）"
-      assert_select "li", text: /涼飲店\s+NT\$500/
+      assert_select "span", text: "預計合計"
+      assert_select "span", text: "NT$960", minimum: 1
+      assert_select "li", text: /涼飲店/, count: 0
+      assert_select "span", text: /超出預算/, count: 0
     end
 
     test "已有詢問單：第一次打開用既有品項當預設，並顯示狀態" do
@@ -211,7 +213,8 @@ module Merchants
       assert_response :success
 
       inquiry = OrderInquiry.last
-      assert_equal({ "status" => "draft", "contacted_via" => nil }, response.parsed_body)
+      assert_equal({ "status" => "draft", "contacted_via" => nil }, response.parsed_body.slice("status", "contacted_via"))
+      assert_equal [ { "merchant_id" => @merchant.id, "status" => "draft", "contacted_via" => nil } ], response.parsed_body["inquiries"]
       assert_equal 1140, inquiry.subtotal
       assert_equal 1200, inquiry.total
       assert_equal 18, inquiry.headcount_at_creation

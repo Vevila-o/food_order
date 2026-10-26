@@ -1,6 +1,7 @@
 class OrderInquiry < ApplicationRecord
   belongs_to :event
   belongs_to :merchant
+  belongs_to :order_group, optional: true
   has_many :items, class_name: "OrderInquiryItem", dependent: :destroy, inverse_of: :order_inquiry
   has_one :order_record, dependent: :destroy
 
@@ -15,7 +16,16 @@ class OrderInquiry < ApplicationRecord
   validates :delivery_fee, :total, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
   validates :merchant_id, uniqueness: { scope: :event_id, message: "這場活動已有這間店的詢問單" }
 
+  validate :group_matches_event
+
   scope :latest_first, -> { order(created_at: :desc) }
+
+  # 同組的另一張詢問單（沒有組或組內只有自己時為 nil）
+  def partner
+    return unless order_group
+
+    order_group.order_inquiries.where.not(id: id).first
+  end
 
   # 「需調整訂餐」= 最新人數 ≠ 產生詢問單時的人數
   def needs_adjustment?
@@ -51,5 +61,11 @@ class OrderInquiry < ApplicationRecord
       order_record&.destroy!
       update!(status: sent_at ? :sent : :draft)
     end
+  end
+
+  private
+
+  def group_matches_event
+    errors.add(:order_group, "必須是同一場活動") if order_group && order_group.event_id != event_id
   end
 end
