@@ -134,6 +134,7 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 - 文字一律深色（`#14302F`，warning 上用 `#2A140B`），對比 ≥ 4.5:1。設計稿的 `#6A7C7B`（4.39:1）不合格，已改用 `muted`。
 - 字型用系統字型（PingFang TC → Noto Sans TC → 無襯線），**不載入 Google Fonts**（CSP 只允許自己的網域）。
 - **daisyUI 自訂 theme 必須定義 `--border`、`--depth`、`--noise`、`--size-field`、`--size-selector`**：少了的話 `.btn` 會變成瀏覽器預設的 3px 粗黑框、元件尺寸也會跑掉，而且不會報錯（`test/assets/theme_test.rb` 檢查）。
+- **首頁頁首**：`PageHeaderComponent` 給 `nav_label` 時，標題列（品牌「Ruby Jam 訂餐助手」、標題「找今晚的餐」、設定與新增店家）包成 `<nav aria-label=首頁導覽>`；設定與新增店家用 `IconLinkComponent(show_label: true)`（手機只有圖示、桌機圖示加文字）。下方活動摘要卡（`EventSummaryComponent`）置中，右邊是倒數卡（`CountdownCardComponent`：距離活動開始的天 / 時，`Event#countdown`，19:30 開始，小時無條件捨去，已開始顯示「已開始或已結束」與「設定下一場」；手機上下堆疊），兩張卡都有 `shadow-md`。
 - 頁面結構：每頁用 `content_for :header` 放 `PageHeaderComponent`（沒有全站導覽列），內容用 `page-container`（手機 20px、桌機 32px 邊距，最寬 1360px）。
 - 版面規則：可點擊元素 ≥ 44×44（膠囊用 `min-h-11`）；手機篩選用橫向膠囊列 + 「更多篩選」抽屜；隱藏的 checkbox（`sr-only` 是絕對定位）的外層 label 要 `relative`，否則會跑出捲動區而撐寬整個頁面（手機會左右晃動）。
 - iOS：`viewport-fit=cover` + `env(safe-area-inset-*)`；輸入框字級 ≥ 16px；提供 PWA manifest。
