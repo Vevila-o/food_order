@@ -9,6 +9,9 @@ class OrderRecord < ApplicationRecord
   validates :headcount, :total, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
   # 手動補登的是「過去」訂過的紀錄；詢問單自動產生的紀錄日期是活動日，訂餐通常在活動前幾天，所以會是未來
   validate :ordered_on_not_in_future, if: :source_manual?
+  # 補登表單（context: :manual_entry）一定要填日期；舊資料可能日期不明（NULL），所以平常不強制
+  validates :ordered_on, presence: true, on: :manual_entry
+  validates :note, length: { maximum: 200 }
 
   # 日期倒序；日期不明（NULL）排最後。各資料庫對 NULL 的預設排序不同（PostgreSQL 的 DESC 把 NULL 排最前面，SQLite 排最後），明確指定才一致。
   scope :recent_first, -> { order(Arel.sql("ordered_on DESC NULLS LAST, created_at DESC")) }

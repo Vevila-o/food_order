@@ -441,4 +441,35 @@ class MerchantsControllerTest < ActionDispatch::IntegrationTest
       assert Merchant.exists?(merchant.id)
     end
   end
+
+  test "首頁頁首是 nav：品牌、標題、設定、新增店家；下面是活動摘要卡與倒數卡，都有陰影" do
+    travel_to Time.zone.local(2026, 10, 22, 14, 30) do
+      create(:event, :with_headcount, held_on: Date.new(2026, 11, 3))
+
+      get root_path
+
+      assert_select "header nav[aria-label=首頁導覽]" do
+        assert_select "span", text: "Ruby Jam 訂餐助手"
+        assert_select "h1", text: "找今晚的餐"
+        assert_select "a[aria-label=設定][href=?]", edit_setting_path
+        assert_select "a[aria-label=新增店家][href=?]", new_merchant_path
+      end
+      assert_select "header section.shadow-md", count: 2
+      assert_select "header section[aria-label=下一場活動]"
+      assert_select "header section[aria-label=倒數計時] p.sr-only", text: "距離下一場 Ruby Jam 還有 12 天 5 小時"
+    end
+  end
+
+  test "首頁沒有活動：沒有摘要卡與倒數卡，導覽仍在" do
+    get root_path
+
+    assert_select "header nav[aria-label=首頁導覽] a[aria-label=設定]"
+    assert_select "section[aria-label=倒數計時]", count: 0
+  end
+
+  test "其他頁面的頁首沒有 nav（只有首頁）" do
+    get history_path
+
+    assert_select "header nav", count: 0
+  end
 end

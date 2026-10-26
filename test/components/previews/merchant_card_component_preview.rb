@@ -10,6 +10,13 @@ class MerchantCardComponentPreview < ViewComponent::Preview
   end
 
   # 只賣飲料（整桶）：沒有每人估價，顯示單價 / 單位
+  # 最近 45 天內訂過：曾訂購圓點旁多一個「上次剛訂過」標籤（避免連續兩個月訂同一家）
+  def recently_ordered
+    merchant = PreviewMerchants.build(menu: PreviewMerchants.fresh_menu, delivers_at_19: "yes", delivery_fee: 0)
+    merchant.order_records.build(source: :manual, ordered_on: Date.current - 12)
+    render MerchantCardComponent.new(merchant: merchant)
+  end
+
   def drink_only
     merchant = PreviewMerchants.build(
       name: "【範例】大安涼飲批發", offers_food: false, offers_drink: true, delivers_at_19: "yes",

@@ -19,12 +19,15 @@ class InquiryPair
   attr_reader :event, :merchant, :main, :partner
 
   # partner_id：nil = 沒有指定（用既有組的搭檔）、"" = 明確沒有搭檔、其他 = 店家 id（不存在或是主店自己就當沒有）
-  def initialize(event:, merchant:, partner_id: nil, quantities: nil)
+  # message_edits：{ 店家 id => 手動改過的訊息 }（儲存時才帶）
+  def initialize(event:, merchant:, partner_id: nil, quantities: nil, message_edits: nil)
     @event = event
     @merchant = merchant
+    edits = (message_edits || {}).to_h.transform_keys(&:to_s)
     partner_merchant = resolve_partner(partner_id)
-    @main = InquiryForm.new(event: event, merchant: merchant, quantities: quantities_for(merchant, quantities))
-    @partner = partner_merchant && InquiryForm.new(event: event, merchant: partner_merchant, quantities: quantities_for(partner_merchant, quantities))
+    @main = InquiryForm.new(event: event, merchant: merchant, quantities: quantities_for(merchant, quantities), message_edit: edits[merchant.id.to_s])
+    @partner = partner_merchant && InquiryForm.new(event: event, merchant: partner_merchant, quantities: quantities_for(partner_merchant, quantities),
+                                                   message_edit: edits[partner_merchant.id.to_s])
   end
 
   # 右側清單要找哪一種搭檔：:food / :drink / :any
@@ -119,7 +122,7 @@ class InquiryPair
     return existing_partner if partner_id.nil?
     return if partner_id.to_s.empty?
 
-    found = Merchant.includes(:menu_items).find_by(id: partner_id)
+    found = Merchant.includes(:menu_items, :order_records).find_by(id: partner_id)
     found unless found.nil? || found.id == merchant.id
   end
 

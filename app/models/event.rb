@@ -50,6 +50,19 @@ class Event < ApplicationRecord
   # 「週二」由日期計算，不寫死
   def weekday_label = "週#{WEEKDAYS[held_on.wday]}"
 
+  Countdown = Data.define(:days, :hours, :started)
+
+  # 活動開始的時間點（活動日 + starts_at，Asia/Taipei）
+  def starts_at_time = Time.zone.local(held_on.year, held_on.month, held_on.day, starts_at.hour, starts_at.min)
+
+  # 距離活動開始還有幾天幾小時（天數 + 不滿一天的小時，皆無條件捨去）；已經開始或過了就是 started
+  def countdown(now = Time.current)
+    seconds = (starts_at_time - now).to_i
+    return Countdown.new(days: 0, hours: 0, started: true) if seconds <= 0
+
+    Countdown.new(days: seconds / 1.day, hours: seconds % 1.day / 1.hour, started: false)
+  end
+
   def delivery_window_label = "#{delivery_from.strftime("%H:%M")}–#{delivery_until.strftime("%H:%M")}"
 
   private

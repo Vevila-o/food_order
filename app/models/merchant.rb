@@ -70,6 +70,18 @@ class Merchant < ApplicationRecord
   # 列表頁請 includes(:order_records)，避免 N+1。
   def ordered_before? = order_records.any?
 
+  # 「上次剛訂過」：最近一筆訂購日在這幾天內（Ruby Jam 每月一次，連續兩個月訂同一家就會提示）
+  RECENT_ORDER_DAYS = 45
+
+  # 最近的訂購日；沒有紀錄或日期不明時為 nil。列表頁請 includes(:order_records)
+  def last_ordered_on = order_records.filter_map(&:ordered_on).max
+
+  # 最近剛訂過的日期（沒有或已經很久以前則為 nil）；日期可能是本場活動日（詢問單確認訂購時用活動日期）
+  def recently_ordered_on
+    date = last_ordered_on
+    date if date && date >= Date.current - RECENT_ORDER_DAYS
+  end
+
   # 到 PicCollage 的直線距離（公里）；沒有座標時為 nil
   def distance_km
     return if lat.nil? || lng.nil?

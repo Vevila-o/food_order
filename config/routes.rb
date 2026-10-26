@@ -50,7 +50,8 @@ Rails.application.routes.draw do
     # 記錄「這家有訂購」：確認訂購會建立訂購紀錄（店家的「曾訂購」圓點由紀錄衍生），取消會刪掉自動產生的紀錄
     resource :confirmation, only: %i[create destroy], module: :inquiries
   end
-  get "orders", to: "orders#index", as: :orders
+  # 已訂購：歷史訂購紀錄；補登（手動新增）過去訂過的，只能刪除手動補登的（詢問單產生的要到「已詢問」取消）
+  resources :orders, only: %i[index new create destroy]
 
   root "merchants#index"
 end

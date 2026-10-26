@@ -548,4 +548,41 @@ class MerchantTest < ActiveSupport::TestCase
 
     assert_equal "備註", merchant.reload.shortlist_note
   end
+
+  test "recently_ordered_on：最近一筆訂購在 45 天內才有，剛好 45 天也算" do
+    travel_to Date.new(2026, 10, 27) do
+      merchant = create(:merchant)
+      assert_nil merchant.recently_ordered_on
+
+      create(:order_record, merchant: merchant, ordered_on: Date.new(2026, 8, 12)) # 76 天前
+      assert_nil merchant.reload.recently_ordered_on
+
+      create(:order_record, merchant: merchant, ordered_on: Date.new(2026, 9, 12)) # 剛好 45 天
+      assert_equal Date.new(2026, 9, 12), merchant.reload.recently_ordered_on
+
+      create(:order_record, merchant: merchant, ordered_on: Date.new(2026, 10, 6))
+      assert_equal Date.new(2026, 10, 6), merchant.reload.recently_ordered_on
+      assert_equal Date.new(2026, 10, 6), merchant.last_ordered_on
+    end
+  end
+
+  test "recently_ordered_on：46 天前不算；日期不明的紀錄被忽略" do
+    travel_to Date.new(2026, 10, 27) do
+      merchant = create(:merchant)
+      create(:order_record, merchant: merchant, ordered_on: Date.new(2026, 9, 11)) # 46 天
+      create(:order_record, merchant: merchant, ordered_on: nil)
+
+      assert_nil merchant.reload.recently_ordered_on
+      assert_equal Date.new(2026, 9, 11), merchant.last_ordered_on
+    end
+  end
+
+  test "活動日在未來的紀錄（詢問單確認訂購）也算剛訂過" do
+    travel_to Date.new(2026, 10, 27) do
+      merchant = create(:merchant)
+      create(:order_record, merchant: merchant, source: "inquiry", ordered_on: Date.new(2026, 11, 3))
+
+      assert_equal Date.new(2026, 11, 3), merchant.reload.recently_ordered_on
+    end
+  end
 end

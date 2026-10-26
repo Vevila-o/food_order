@@ -9,6 +9,7 @@
       <p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
         <% if area_text %><span><%= area_text %></span><% end %>
         <%= render OrderedDotComponent.new(ordered: merchant.ordered_before?) %>
+        <% if recent_order_text %><%= render(PillComponent.new(tone: :secondary)) { recent_order_text } %><% end %>
       </p>
     </div>
     <div class="flex shrink-0 gap-1">

@@ -90,4 +90,30 @@ class EventTest < ActiveSupport::TestCase
   test "title_for" do
     assert_equal "Ruby Jam 2026 年 11 月", Event.title_for(Date.new(2026, 11, 24))
   end
+
+  test "starts_at_time：活動日 + 開始時間（Asia/Taipei）" do
+    event = build(:event, held_on: Date.new(2026, 11, 3))
+
+    assert_equal Time.zone.local(2026, 11, 3, 19, 30), event.starts_at_time
+    assert_equal "+08:00", event.starts_at_time.formatted_offset
+  end
+
+  test "countdown：幾天幾小時，小時無條件捨去" do
+    event = build(:event, held_on: Date.new(2026, 11, 3))
+
+    result = event.countdown(Time.zone.local(2026, 10, 22, 14, 30))
+    assert_equal [ 12, 5, false ], [ result.days, result.hours, result.started ]
+
+    result = event.countdown(Time.zone.local(2026, 11, 3, 18, 31))
+    assert_equal [ 0, 0, false ], [ result.days, result.hours, result.started ]
+  end
+
+  test "countdown：開始的那一刻與之後都是 started，天與小時為 0" do
+    event = build(:event, held_on: Date.new(2026, 11, 3))
+
+    [ Time.zone.local(2026, 11, 3, 19, 30), Time.zone.local(2026, 12, 1) ].each do |now|
+      result = event.countdown(now)
+      assert_equal [ 0, 0, true ], [ result.days, result.hours, result.started ], now.to_s
+    end
+  end
 end

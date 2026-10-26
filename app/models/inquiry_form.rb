@@ -8,16 +8,19 @@ class InquiryForm
 
   MAX_QUANTITY = 99
   NOTHING_SELECTED = "請至少選一項餐點"
+  MAX_MESSAGE_LENGTH = 2000
   Line = Data.define(:menu_item, :quantity) do
     def line_total = menu_item.price * quantity
   end
 
-  attr_reader :event, :merchant, :quantities
+  attr_reader :event, :merchant, :quantities, :message_edit
 
   # quantities：{ "12" => "3", ... }（menu_item_id => 數量）；沒給就用這場活動既有詢問單的品項當預設
-  def initialize(event:, merchant:, quantities: nil)
+  # message_edit：使用者手動改過的訊息文字（儲存時才會帶）；和自動產生的一樣就當作沒改
+  def initialize(event:, merchant:, quantities: nil, message_edit: nil)
     @event = event
     @merchant = merchant
+    @message_edit = message_edit.to_s.gsub("\r\n", "\n").strip.presence
     @quantities = normalize(quantities.nil? ? existing_quantities : quantities)
   end
 
@@ -74,8 +77,16 @@ class InquiryForm
     @pricing ||= OrderPricing.call(merchant: merchant, lines: lines.map { |line| [ line.menu_item.price, line.quantity ] })
   end
 
+  # 畫面預覽、複製、存進 message_text 的訊息：手動改過的，否則自動產生的
   def message
-    @message ||= InquiryMessage.new(
+    @message ||= custom_message || generated_message
+  end
+
+  # 手動改過（和自動產生的不同）
+  def message_edited? = !custom_message.nil?
+
+  def generated_message
+    @generated_message ||= InquiryMessage.new(
       event: event, location: setting.delivery_location_text, recipient: setting.recipient_text, invoice: setting.invoice_text, subtotal: pricing.subtotal,
       lines: lines.map { |line| InquiryMessage::Line.new(name: line.menu_item.name, unit: line.menu_item.unit, quantity: line.quantity) }
     ).text
@@ -96,6 +107,7 @@ class InquiryForm
   validate :quantities_valid
   validate :not_confirmed
   validate :something_selected
+  validate :message_edit_length
 
   # 存成詢問單（草稿）；channel 有給時（按聯絡按鈕）同時標為已詢問。成功回傳詢問單，失敗回傳 false。
   def save(channel: nil)
@@ -105,7 +117,7 @@ class InquiryForm
       inquiry = existing_inquiry || OrderInquiry.new(event: event, merchant: merchant)
       inquiry.assign_attributes(
         headcount_at_creation: event.headcount, subtotal: pricing.subtotal, delivery_fee: pricing.delivery_fee,
-        total: pricing.total, message_text: message
+        total: pricing.total, message_text: message, message_edited: message_edited?
       )
       inquiry.save!
       inquiry.items.destroy_all
@@ -125,6 +137,28 @@ class InquiryForm
   private
 
   def setting = @setting ||= AppSetting.instance
+
+  # 改過的訊息：這次請求帶來的修改；沒帶時，已存的修改版本只在「品項與數量和存的一樣」時沿用
+  # （數量變了，舊的修改版本裡的數字就不對，改回自動產生，不會把過期的內容複製出去）
+  def custom_message
+    return @custom_message if defined?(@custom_message)
+
+    @custom_message =
+      if message_edit
+        message_edit unless message_edit == generated_message
+      elsif existing_inquiry&.message_edited? && saved_lines_match?
+        existing_inquiry.message_text
+      end
+  end
+
+  def saved_lines_match?
+    saved = existing_inquiry.items.map { |item| [ item.menu_item_id, item.quantity ] }.sort
+    saved == lines.map { |line| [ line.menu_item.id, line.quantity ] }.sort
+  end
+
+  def message_edit_length
+    errors.add(:base, "訊息最多 #{MAX_MESSAGE_LENGTH} 字") if message_edit && message_edit.length > MAX_MESSAGE_LENGTH
+  end
 
   def existing_quantities
     return {} unless existing_inquiry
