@@ -104,6 +104,37 @@ class Merchant < ApplicationRecord
     update_columns(shortlisted: true, shortlist_position: position)
   end
 
+  SHORTLIST_NOTE_LIMIT = 500
+
+  # 候選名單往前（:up）/ 往後（:down）移一位。先把位置整理成 1..n（避免重複或空位），再和相鄰的交換；
+  # 已經在最前 / 最後、不在候選、方向不認得都什麼都不做。回傳有沒有移動。
+  # 用 update_columns：不算更新店家，不改 updated_at（首頁依最近更新排序，排序不該讓它跳動）。
+  def move_in_shortlist!(direction)
+    return false unless shortlisted? && %i[up down].include?(direction.to_s.to_sym)
+
+    transaction do
+      list = Merchant.shortlisted.to_a
+      list.each_with_index { |merchant, index| merchant.update_columns(shortlist_position: index + 1) }
+      index = list.index { |merchant| merchant.id == id }
+      target = direction.to_s == "up" ? index - 1 : index + 1
+      next false if target.negative? || target >= list.size
+
+      list[index].update_columns(shortlist_position: target + 1)
+      list[target].update_columns(shortlist_position: index + 1)
+      reload
+      true
+    end
+  end
+
+  # 候選備註（例如「上次太鹹」「要提前兩天訂」）：空白存成 nil；用 update_columns 不改 updated_at。回傳是否儲存
+  def update_shortlist_note!(text)
+    note = text.to_s.strip.presence
+    return false if note && note.length > SHORTLIST_NOTE_LIMIT
+
+    update_columns(shortlist_note: note)
+    true
+  end
+
   # 移出候選：清掉排序位置，備註保留（之後再加回來還在）
   def remove_from_shortlist!
     update_columns(shortlisted: false, shortlist_position: nil)

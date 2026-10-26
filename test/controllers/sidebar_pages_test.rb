@@ -152,6 +152,24 @@ class SidebarPagesTest < ActionDispatch::IntegrationTest
     assert_select "article button[aria-label=下次候選][aria-pressed=true]", count: 2
   end
 
+  test "下次訂購：每間店有順位、往前 / 往後按鈕（最前與最後停用）與備註表單" do
+    first = create(:merchant, name: "先加的", shortlisted: true, shortlist_position: 1, shortlist_note: "上次太鹹")
+    last = create(:merchant, name: "後加的", shortlisted: true, shortlist_position: 2)
+
+    get shortlist_path
+
+    assert_select "ol[aria-label=候選名單] > li", count: 2
+    assert_select "li#shortlist_item_#{first.id} span[aria-label='第 1 順位']", text: "1"
+    assert_select "li#shortlist_item_#{last.id} span[aria-label='第 2 順位']", text: "2"
+    assert_select "li#shortlist_item_#{first.id} button[disabled][aria-label='先加的往前一位']"
+    assert_select "li#shortlist_item_#{first.id} form[action=?] button:not([disabled])", move_merchant_shortlist_path(first, direction: "down")
+    assert_select "li#shortlist_item_#{last.id} button[disabled][aria-label='後加的往後一位']"
+    assert_select "li#shortlist_item_#{first.id} textarea[name=shortlist_note]", text: /上次太鹹/
+    assert_select "li#shortlist_item_#{last.id} form[action=?] input[type=submit][value=儲存備註]", merchant_shortlist_path(last)
+    assert_select "meta[name=turbo-refresh-method][content=morph]"
+    assert_select "meta[name=turbo-refresh-scroll][content=preserve]"
+  end
+
   test "下次訂購沒有資料：說明怎麼加入" do
     get shortlist_path
 

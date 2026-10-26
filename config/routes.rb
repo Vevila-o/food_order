@@ -19,7 +19,10 @@ Rails.application.routes.draw do
 
     # 收藏與下次候選：POST 加入、DELETE 移除（重複操作結果一致）
     resource :favorite, only: %i[create destroy], module: :merchants
-    resource :shortlist, only: %i[create destroy], module: :merchants
+    resource :shortlist, only: %i[create destroy update], module: :merchants do
+      # 候選名單排序：往前 / 往後一位（direction=up|down）
+      patch :move
+    end
 
     # 訂單詢問產生器：GET 顯示（數量放在網址，Turbo Frame 即時重算）、POST 儲存草稿 / 標為已詢問（JSON）
     resource :inquiry, only: %i[show create], module: :merchants do
