@@ -62,6 +62,7 @@ zh-TW:
         delivery_floor: 樓層
         recipient_name: 收件人
         recipient_phone: 收件電話
+        tax_id: 統一編號
 
   activemodel:
     models:

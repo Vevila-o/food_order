@@ -3,9 +3,9 @@ require "test_helper"
 class InquiryMessageTest < ActiveSupport::TestCase
   LOCATION = "PicCollage 公司總部（台北市大安區光復南路 102 號 3 樓）".freeze
 
-  def build_text(event: build(:event, held_on: Date.new(2026, 10, 27)), lines: nil, subtotal: 1620, recipient: nil)
+  def build_text(event: build(:event, held_on: Date.new(2026, 10, 27)), lines: nil, subtotal: 1620, recipient: nil, invoice: nil)
     lines ||= [ InquiryMessage::Line.new(name: "雞腿便當", unit: "份", quantity: 18) ]
-    InquiryMessage.new(event: event, location: LOCATION, lines: lines, subtotal: subtotal, recipient: recipient).text
+    InquiryMessage.new(event: event, location: LOCATION, lines: lines, subtotal: subtotal, recipient: recipient, invoice: invoice).text
   end
 
   test "照規格書範本：日期、星期、送達時段、地點、品項、小計" do
@@ -13,7 +13,7 @@ class InquiryMessageTest < ActiveSupport::TestCase
       您好！想詢問 10/27（週二）19:00–19:15 之間，是否能外送以下餐點到 PicCollage 公司總部（台北市大安區光復南路 102 號 3 樓）：
       - 雞腿便當 × 18 份
       依菜單價格估計小計約 NT$1,620。
-      想請問是否需要外送費？另外也想確認目前菜單價格是否有調整。
+      想請問是否需要外送費？
       謝謝！
     TEXT
   end
@@ -58,5 +58,20 @@ class InquiryMessageTest < ActiveSupport::TestCase
     msg = InquiryMessage.new(event: build(:event), location: LOCATION, lines: [], subtotal: 0)
 
     assert_equal msg.text, msg.to_s
+  end
+
+  test "發票統編有填才加一行，在收件資訊之後、小計之前" do
+    lines = build_text(recipient: "收件人：王小明", invoice: "發票統一編號：12345678").lines.map(&:chomp)
+
+    assert_equal "收件人：王小明", lines[2]
+    assert_equal "發票統一編號：12345678", lines[3]
+    assert_match(/\A依菜單價格估計小計/, lines[4])
+    assert_not_includes build_text, "發票"
+    assert_equal build_text, build_text(invoice: "")
+  end
+
+  test "不再附確認菜單價格的句子" do
+    assert_not_includes build_text, "菜單價格是否有調整"
+    assert_includes build_text, "想請問是否需要外送費？\n"
   end
 end
