@@ -65,4 +65,31 @@ class AppSettingTest < ActiveSupport::TestCase
     assert_not setting.update(recipient_phone: "abc; DROP")
     assert_not setting.update(recipient_phone: "1" * 31)
   end
+
+  test "統一編號：8 碼數字（開頭可以是 0），空白存成 nil" do
+    setting = AppSetting.instance
+
+    assert setting.update(tax_id: " 12345678 ")
+    assert_equal "12345678", setting.tax_id
+    assert setting.update(tax_id: "00123456")
+    assert_equal "00123456", setting.reload.tax_id
+    assert setting.update(tax_id: "")
+    assert_nil setting.tax_id
+  end
+
+  test "統一編號：不是 8 碼數字就不接受" do
+    setting = AppSetting.instance
+
+    [ "1234567", "123456789", "abcdefgh", "1234-5678", "1234567a" ].each do |value|
+      assert_not setting.update(tax_id: value), value
+      assert_includes setting.errors.full_messages, "統一編號必須是 8 碼數字", value
+    end
+  end
+
+  test "統一編號不會寫進詢問訊息的收件資訊" do
+    setting = AppSetting.instance
+    setting.update!(tax_id: "12345678", recipient_name: "王小明")
+
+    assert_not_includes setting.recipient_text.to_s, "12345678"
+  end
 end

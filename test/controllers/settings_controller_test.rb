@@ -24,6 +24,31 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     assert_select "section", text: /18 人/
   end
 
+  test "設定頁有統一編號欄位（選填，說明只存在這裡）" do
+    get edit_setting_path
+
+    assert_select "legend", text: "發票（選填）"
+    assert_select "input[name='app_setting[tax_id]'][maxlength='8'][inputmode=numeric]"
+    assert_select "p", text: /不會寫進詢問訊息/
+  end
+
+  test "儲存統一編號；頁面帶出已存的值" do
+    patch setting_path, params: { app_setting: { delivery_place_name: "辦公室", tax_id: "12345678" } }
+
+    assert_redirected_to edit_setting_path
+    assert_equal "12345678", AppSetting.instance.tax_id
+    follow_redirect!
+    assert_select "input[name='app_setting[tax_id]'][value='12345678']"
+  end
+
+  test "統一編號格式錯誤：顯示錯誤、不儲存" do
+    patch setting_path, params: { app_setting: { delivery_place_name: "辦公室", tax_id: "123" } }
+
+    assert_response :unprocessable_content
+    assert_select ".alert", text: /統一編號必須是 8 碼數字/
+    assert_nil AppSetting.instance.tax_id
+  end
+
   test "儲存收餐資訊" do
     patch setting_path, params: { app_setting: { delivery_place_name: "新辦公室", delivery_address: "台北市某路 1 號", delivery_floor: "5 樓", recipient_name: "王小明", recipient_phone: "0912-345-678" } }
 

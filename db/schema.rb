@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_27_000023) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_27_000024) do
   create_table "app_settings", force: :cascade do |t|
     t.boolean "singleton", default: true, null: false
     t.string "delivery_place_name"
@@ -20,6 +20,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_27_000023) do
     t.string "recipient_phone"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "tax_id"
     t.index ["singleton"], name: "index_app_settings_on_singleton", unique: true
     t.check_constraint "singleton", name: "app_settings_single_row"
   end

@@ -7,12 +7,14 @@ class AppSetting < ApplicationRecord
   }.freeze
 
   PHONE_FORMAT = /\A[0-9+\-()\s#]+\z/
+  TAX_ID_FORMAT = /\A\d{8}\z/ # 統一編號 8 碼（只檢查格式，不檢查檢查碼：檢查碼規則已調整過，擋錯反而誤傷）
 
-  normalizes :delivery_place_name, :delivery_address, :delivery_floor, :recipient_name, :recipient_phone,
+  normalizes :delivery_place_name, :delivery_address, :delivery_floor, :recipient_name, :recipient_phone, :tax_id,
              with: ->(value) { value.to_s.squish.presence }
 
   validates :delivery_place_name, :delivery_address, :delivery_floor, :recipient_name, length: { maximum: 100 }
   validates :recipient_phone, length: { maximum: 30 }, format: { with: PHONE_FORMAT, message: "只能填數字、+、-、括號與空格" }, allow_nil: true
+  validates :tax_id, format: { with: TAX_ID_FORMAT, message: "必須是 8 碼數字" }, allow_nil: true
   validate :delivery_location_present
 
   def self.instance
