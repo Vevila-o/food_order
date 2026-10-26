@@ -1,0 +1,29 @@
+# 相依與暫存
+/.bundle
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+/tmp/pids/*
+!/tmp/pids/.keep
+/tmp/storage/*
+!/tmp/storage/.keep
+/storage/*
+!/storage/.keep
+/public/assets
+.DS_Store
+
+# 金鑰：絕不進 Git
+/.env*
+!/.env.example
+/config/master.key
+/config/credentials/*.key
+
+# Tailwind 編譯輸出
+/app/assets/builds/*
+!/app/assets/builds/.keep
+
+# 測試與 CI
+/tmp/screenshots
+/coverage
+/node_modules
