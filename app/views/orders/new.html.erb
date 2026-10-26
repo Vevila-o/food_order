@@ -1,0 +1,46 @@
+<% content_for :title, "補登訂購 · Ruby Jam 訂餐助手" %>
+<% content_for :header do %>
+  <%= render(PageHeaderComponent.new(title: "補登訂購", subtitle: "記錄過去訂過的店家")) do |header| %>
+    <% header.with_back_link { render BackLinkComponent.new(label: "返回已訂購", href: orders_path) } %>
+  <% end %>
+<% end %>
+
+<%= form_with model: @order_record, url: orders_path, class: "flex max-w-2xl flex-col gap-3.5" do |f| %>
+  <% if @order_record.errors.any? %>
+    <%= render AlertComponent.new(type: :alert) do %>
+      <div>
+        <p class="font-medium">請修正以下問題：</p>
+        <ul class="list-disc pl-5">
+          <% @order_record.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+  <% end %>
+
+  <fieldset class="rounded-2xl bg-base-100 p-4">
+    <legend class="float-left mb-1 w-full text-base font-bold">訂購紀錄</legend>
+    <p class="mb-3 text-sm text-muted">補登之後，店家卡片的「曾訂購」會變橘色，也會提示「上次剛訂過」。</p>
+    <%= render FieldComponent.new(form: f, attribute: :merchant_id, required: true) do %>
+      <%= f.collection_select :merchant_id, @merchants, :id, :name, { prompt: "請選擇店家" }, class: "select w-full" %>
+    <% end %>
+    <%= render FieldComponent.new(form: f, attribute: :ordered_on, required: true, hint: "不可晚於今天") do %>
+      <%= f.date_field :ordered_on, max: Date.current, class: "input w-full" %>
+    <% end %>
+    <%= render FieldComponent.new(form: f, attribute: :headcount) do %>
+      <%= f.number_field :headcount, min: 0, max: 999, inputmode: "numeric", class: "input w-full" %>
+    <% end %>
+    <%= render FieldComponent.new(form: f, attribute: :total, hint: "新台幣元，不知道就留空（不會當成 0）") do %>
+      <%= f.number_field :total, min: 0, inputmode: "numeric", class: "input w-full" %>
+    <% end %>
+    <%= render FieldComponent.new(form: f, attribute: :note) do %>
+      <%= f.text_field :note, maxlength: 200, class: "input w-full", autocomplete: "off" %>
+    <% end %>
+  </fieldset>
+
+  <div class="flex flex-wrap gap-2">
+    <%= f.submit "補登", class: "btn btn-primary" %>
+    <%= link_to "取消", orders_path, class: "btn btn-ghost" %>
+  </div>
+<% end %>

@@ -12,6 +12,9 @@
         <%= render PriceEstimateComponent.new(merchant: @merchant) %>
         <%= render(PillComponent.new(tone: :base)) { "最後驗證 #{format_date(@merchant.last_verified_at, fallback: '尚未驗證')}" } %>
         <%= render OrderedDotComponent.new(ordered: @merchant.ordered_before?) %>
+        <% if (recent = @merchant.recently_ordered_on) %>
+          <%= render(PillComponent.new(tone: :secondary)) { "上次剛訂過 #{recent.month}/#{recent.day}" } %>
+        <% end %>
       </div>
     <% end %>
   <% end %>
@@ -121,6 +124,7 @@
 
   <div class="flex flex-wrap gap-3">
     <%= link_to "編輯", edit_merchant_path(@merchant), class: "btn btn-primary" %>
+    <%= link_to "補登訂購", new_order_path(merchant_id: @merchant.id), class: "btn btn-outline" %>
     <%= button_to "刪除", merchant_path(@merchant), method: :delete, class: "btn btn-ghost",
           form: { data: { turbo_confirm: "確定要刪除「#{@merchant.name}」嗎？" } } %>
   </div>

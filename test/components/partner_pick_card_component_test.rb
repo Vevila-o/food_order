@@ -61,4 +61,15 @@ class PartnerPickCardComponentTest < ViewComponent::TestCase
     assert_no_selector "button[aria-label=收藏]"
     assert_no_selector "a"
   end
+
+  test "45 天內訂過：提示上次剛訂過" do
+    travel_to Time.zone.local(2026, 10, 27, 12, 0) do
+      merchant = fresh_merchant
+      create(:order_record, merchant: merchant, ordered_on: Date.new(2026, 10, 20))
+
+      card(merchant.reload)
+
+      assert_selector "span.bg-secondary", text: "上次剛訂過 10/20"
+    end
+  end
 end
