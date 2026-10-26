@@ -1,0 +1,44 @@
+<% content_for :title, "貼上菜單 · #{@merchant.name}" %>
+
+<div class="max-w-2xl">
+  <h1 class="mb-1 text-2xl font-bold">貼上菜單</h1>
+  <p class="mb-4">店家：<%= link_to @merchant.name, merchant_path(@merchant), class: "underline" %></p>
+
+  <%# 預覽頁是 POST 後直接渲染（不是 redirect），所以不用 Turbo 送出 %>
+  <%= form_with model: @menu_import, scope: :menu_import, url: preview_merchant_menu_import_path(@merchant),
+        method: :post, class: "space-y-6", data: { turbo: false } do |f| %>
+    <% if @menu_import.errors.any? %>
+      <%= render AlertComponent.new(type: :alert) do %>
+        <div>
+          <p class="font-medium">請修正以下問題：</p>
+          <ul class="list-disc pl-5">
+            <% @menu_import.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+    <% end %>
+
+    <p class="text-sm opacity-80">
+      每行一個品項，品名後面接價格，例如「雞腿飯 90」、「紅茶：$30」、「排骨飯 85元」。
+      解析不了的行會告訴你是第幾行，不會被默默略過。
+    </p>
+
+    <%= render FieldComponent.new(form: f, attribute: :food_text) do %>
+      <%= f.text_area :food_text, rows: 6, class: "textarea w-full", placeholder: "雞腿飯 90\n排骨飯 85" %>
+    <% end %>
+    <%= render FieldComponent.new(form: f, attribute: :drink_text) do %>
+      <%= f.text_area :drink_text, rows: 4, class: "textarea w-full", placeholder: "紅茶 30\n綠茶 30" %>
+    <% end %>
+    <%= render FieldComponent.new(form: f, attribute: :menu_date, required: true,
+          hint: "這份菜單是哪一天的（看到菜單的日期）。超過 120 天的菜單不能放進訂單詢問，所以請填實際日期，不要直接填今天。") do %>
+      <%= f.date_field :menu_date, class: "input w-full", max: Date.current, required: true %>
+    <% end %>
+
+    <div class="flex flex-wrap gap-3">
+      <%= f.submit "預覽", class: "btn btn-primary" %>
+      <%= link_to "取消", merchant_path(@merchant), class: "btn btn-ghost" %>
+    </div>
+  <% end %>
+</div>

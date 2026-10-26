@@ -64,6 +64,7 @@
   <section class="rounded-box bg-base-200 p-4">
     <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
       <h2 class="text-lg font-bold">菜單</h2>
+      <%= link_to "貼上菜單", new_merchant_menu_import_path(@merchant), class: "btn btn-sm btn-secondary" %>
       <% if @merchant.menu_items.any? %>
         <%= button_to "確認菜單仍有效", verify_menu_merchant_path(@merchant), method: :post, class: "btn btn-sm btn-primary",
               form: { data: { turbo_confirm: "確認這間店的菜單與價格目前仍然有效？所有項目的菜單日期會改為今天。" } } %>

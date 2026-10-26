@@ -63,6 +63,15 @@ zh-TW:
         recipient_name: 收件人
         recipient_phone: 收件電話
 
+  activemodel:
+    models:
+      menu_import: 貼上菜單
+    attributes:
+      menu_import:
+        food_text: 餐食菜單
+        drink_text: 飲料菜單
+        menu_date: 菜單日期
+
   # 列舉文字：enums.<model>.<attribute>.<value>，用 enum_text(record, :attribute) 取用
   enums:
     merchant:

@@ -1,0 +1,51 @@
+<% content_for :title, "預覽菜單 · #{@merchant.name}" %>
+
+<div class="max-w-2xl">
+  <h1 class="mb-1 text-2xl font-bold">預覽菜單</h1>
+  <p class="mb-4">
+    店家：<%= link_to @merchant.name, merchant_path(@merchant), class: "underline" %>　
+    菜單日期：<strong><%= l(@menu_import.menu_date, format: :long) %></strong>
+  </p>
+
+  <div class="mb-4 rounded-box bg-base-200 p-3">
+    <table class="w-full text-left">
+      <thead>
+        <tr class="text-sm opacity-80">
+          <th class="py-1">類別</th><th>品名</th><th class="text-right">價格</th><th class="text-right">處理</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @menu_import.rows.each do |row| %>
+          <tr class="border-t border-base-300">
+            <td class="py-2"><%= t("enums.menu_item.category.#{row.category}") %></td>
+            <td><%= row.name %></td>
+            <td class="text-right"><%= format_money(row.price) %></td>
+            <td class="text-right text-sm">
+              <% if row.action == :update %>
+                更新（原 <%= format_money(row.old_price) %>）
+              <% else %>
+                新增
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <p class="mb-4 text-sm opacity-80">
+    共 <%= @menu_import.rows.size %> 項。確認後才會寫入；同品名已存在的項目會更新價格與菜單日期。
+  </p>
+
+  <%# 重新送出原始文字，確認時伺服器會再解析一次，不信任這個畫面 %>
+  <%= form_with model: @menu_import, scope: :menu_import, url: merchant_menu_import_path(@merchant),
+        method: :post, data: { turbo: false } do |f| %>
+    <%= f.hidden_field :food_text %>
+    <%= f.hidden_field :drink_text %>
+    <%= f.hidden_field :menu_date %>
+    <div class="flex flex-wrap gap-3">
+      <%= f.submit "確認匯入", class: "btn btn-primary" %>
+      <%# 返回修改：用 GET 帶回原本貼的內容 %>
+      <%= f.submit "返回修改", formaction: new_merchant_menu_import_path(@merchant), formmethod: "get", class: "btn btn-ghost", name: nil %>
+    </div>
+  <% end %>
+</div>

@@ -16,6 +16,11 @@ Rails.application.routes.draw do
   resources :merchants do
     # 確認菜單仍有效：該店所有菜單項目的日期改為今天
     post :verify_menu, on: :member
+
+    # 貼上菜單：new（輸入）→ preview（預覽）→ create（確認寫入）
+    resource :menu_import, only: %i[new create] do
+      post :preview
+    end
   end
 
   root "merchants#index"
