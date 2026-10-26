@@ -20,7 +20,7 @@ class AppSettingTest < ActiveSupport::TestCase
   test "資料庫保證只會有一列" do
     AppSetting.instance
 
-    assert_raises(ActiveRecord::RecordNotUnique) { AppSetting.create! }
+    assert_raises(ActiveRecord::RecordNotUnique) { AppSetting.new.save!(validate: false) }
   end
 
   test "收件資訊：有填才顯示，都沒填時為 nil" do
@@ -39,5 +39,30 @@ class AppSettingTest < ActiveSupport::TestCase
     setting.update!(delivery_place_name: nil, delivery_floor: nil)
 
     assert_equal "（台北市大安區光復南路 102 號）", setting.delivery_location_text
+  end
+
+  test "前後空白與多餘空格會整理，空字串存成 nil" do
+    setting = AppSetting.instance
+    setting.update!(recipient_name: "  王  小明 ", recipient_phone: "   ", delivery_floor: "")
+
+    assert_equal "王 小明", setting.recipient_name
+    assert_nil setting.recipient_phone
+    assert_nil setting.delivery_floor
+  end
+
+  test "收餐地點名稱與地址至少填一個" do
+    setting = AppSetting.instance
+
+    assert_not setting.update(delivery_place_name: "", delivery_address: "")
+    assert setting.errors.key?(:delivery_place_name)
+    assert setting.update(delivery_place_name: "", delivery_address: "台北市某路 1 號")
+  end
+
+  test "電話只能有數字與常見符號，其他格式不接受" do
+    setting = AppSetting.instance
+
+    assert setting.update(recipient_phone: "+886 (2) 2345-6789 #12")
+    assert_not setting.update(recipient_phone: "abc; DROP")
+    assert_not setting.update(recipient_phone: "1" * 31)
   end
 end

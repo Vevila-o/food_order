@@ -9,6 +9,11 @@ class EventSummaryComponentPreview < ViewComponent::Preview
     render EventSummaryComponent.new(event: build_event(headcount: 18, inquiry_headcount: 16))
   end
 
+  # 有給 edit_href 時，人數旁顯示「修正人數」連結
+  def with_edit_link
+    render EventSummaryComponent.new(event: build_event(headcount: 18), edit_href: "/events/1/edit")
+  end
+
   # 人數變少
   def fewer_people
     render EventSummaryComponent.new(event: build_event(headcount: 15, inquiry_headcount: 18))
