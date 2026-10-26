@@ -49,4 +49,25 @@ class DataTableComponentTest < ViewComponent::TestCase
     assert_selector "tbody tr", count: 0
     assert_selector "thead th", count: 3
   end
+
+  test "沒給 wrap_columns：所有欄位都可換行" do
+    render_table
+
+    assert_no_selector "td.md\\:whitespace-nowrap"
+  end
+
+  test "給 wrap_columns：只有那些欄位可換行（保留最小寬度），其他欄位不換行" do
+    render_inline(DataTableComponent.new(headers: %w[活動 店家 金額], rows: [ %w[A B C] ], caption: "x", wrap_columns: [ 1 ]))
+
+    assert_selector "td:nth-child(1).md\\:whitespace-nowrap"
+    assert_selector "td:nth-child(2).md\\:min-w-36"
+    assert_no_selector "td:nth-child(2).md\\:whitespace-nowrap"
+    assert_selector "td:nth-child(3).md\\:whitespace-nowrap"
+  end
+
+  test "桌機表格比容器寬時可橫向捲動，不會把最右邊的欄位切掉" do
+    render_table
+
+    assert_selector "div.md\\:overflow-x-auto"
+  end
 end

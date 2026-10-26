@@ -43,7 +43,10 @@ Rails.application.routes.draw do
   get "history", to: "browsing_histories#index", as: :history
   get "favorites", to: "favorite_merchants#index", as: :favorites
   get "shortlist", to: "shortlisted_merchants#index", as: :shortlist
-  resources :inquiries, only: :index
+  resources :inquiries, only: :index do
+    # 記錄「這家有訂購」：確認訂購會建立訂購紀錄（店家的「曾訂購」圓點由紀錄衍生），取消會刪掉自動產生的紀錄
+    resource :confirmation, only: %i[create destroy], module: :inquiries
+  end
   get "orders", to: "orders#index", as: :orders
 
   root "merchants#index"

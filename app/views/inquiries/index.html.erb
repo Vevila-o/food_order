@@ -5,21 +5,50 @@
 
 <% if @inquiries.any? %>
   <% status_tones = { "draft" => :base, "sent" => :soft, "confirmed" => :primary } %>
-  <% rows = @inquiries.map do |inquiry| %>
-    <% [
-      format_month(inquiry.event.held_on),
-      link_to(inquiry.merchant.name, merchant_path(inquiry.merchant), class: "underline-offset-2 hover:underline"),
-      (partner = inquiry.order_group&.order_inquiries&.find { |other| other.id != inquiry.id }) ? "與 #{partner.merchant.name} 一組" : "—",
-      render(PillComponent.new(tone: status_tones.fetch(inquiry.status))) { enum_text(inquiry, :status) },
-      enum_text(inquiry, :contacted_via) || "—",
-      "#{inquiry.headcount_at_creation} 人",
-      inquiry.total ? format_money(inquiry.total) : render(PillComponent.new(tone: :secondary)) { t("common.unknown_amount") },
-      l(inquiry.created_at.to_date, format: :long),
-      # 只有目前這一場能重開產生器（帶著搭檔）；歷史活動的詢問單只供查看
-      inquiry.event_id == @current_event&.id ? link_to("開啟詢問", merchant_inquiry_path(inquiry.merchant, partner_id: partner&.merchant_id.to_s), class: "font-medium underline") : "—"
-    ] %>
-  <% end %>
-  <%= render DataTableComponent.new(headers: %w[活動 店家 搭配 狀態 管道 人數 預計金額 建立日期 操作], rows: rows, caption: "已詢問的紀錄") %>
+  <% rows = @inquiries.map do |inquiry|
+       partner = inquiry.order_group&.order_inquiries&.find { |other| other.id != inquiry.id }
+       # 同組的另一家寫在店名下面（不另開一欄，表格才不會太寬）
+       merchant_cell = safe_join([
+         link_to(inquiry.merchant.name, merchant_path(inquiry.merchant), class: "underline-offset-2 hover:underline"),
+         (content_tag(:span, "與 #{partner.merchant.name} 一組", class: "block text-xs font-normal text-muted") if partner)
+       ].compact)
+       # 訂購：按下去記錄「這家有訂購」，之後店家卡片的圓點變橘色、出現在「已訂購」
+       order_cell =
+         if inquiry.confirmed?
+           # 叉叉 = 取消訂購（配對的兩家一起取消）
+           content_tag(:span, class: "flex items-center gap-1.5") do
+             safe_join([
+               render(PillComponent.new(tone: :primary)) { "已訂購" },
+               button_to(inquiry_confirmation_path(inquiry), method: :delete, title: "取消訂購", aria: { label: "取消訂購：#{inquiry.merchant.name}" },
+                         class: "inline-flex size-11 cursor-pointer items-center justify-center rounded-full bg-base-200 hover:bg-warning-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-base-content",
+                         form: { class: "contents", data: { turbo_confirm: "取消#{partner ? "「#{inquiry.merchant.name}」與「#{partner.merchant.name}」" : "「#{inquiry.merchant.name}」"}的訂購紀錄？「已訂購」裡自動產生的紀錄也會一併移除。" } }) do
+                 render IconComponent.new(name: :close, size: 20)
+               end
+             ])
+           end
+         else
+           # 打勾 = 記錄已訂購（配對的兩家一起記錄）
+           button_to(inquiry_confirmation_path(inquiry), method: :post, title: "記錄已訂購", aria: { label: "記錄已訂購：#{inquiry.merchant.name}" },
+                     class: "inline-flex size-11 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-base-content",
+                     form: { class: "contents", data: { turbo_confirm: (partner ? "記錄「#{inquiry.merchant.name}」與搭配的「#{partner.merchant.name}」都已訂購？" : "記錄「#{inquiry.merchant.name}」已訂購？") } }) do
+             render IconComponent.new(name: :check, size: 20)
+           end
+         end
+       # 只有目前這一場能重開產生器（帶著搭檔）；歷史活動的詢問單只供查看
+       open_cell = inquiry.event_id == @current_event&.id ? link_to("開啟詢問", merchant_inquiry_path(inquiry.merchant, partner_id: partner&.merchant_id.to_s), class: "font-medium underline") : "—"
+       [
+         format_month(inquiry.event.held_on),
+         merchant_cell,
+         render(PillComponent.new(tone: status_tones.fetch(inquiry.status))) { enum_text(inquiry, :status) },
+         enum_text(inquiry, :contacted_via) || "—",
+         "#{inquiry.headcount_at_creation} 人",
+         inquiry.total ? format_money(inquiry.total) : render(PillComponent.new(tone: :secondary)) { t("common.unknown_amount") },
+         l(inquiry.created_at.to_date, format: :long),
+         order_cell,
+         open_cell
+       ]
+     end %>
+  <%= render DataTableComponent.new(headers: %w[活動 店家 狀態 管道 人數 預計金額 建立日期 訂購 操作], rows: rows, caption: "已詢問的紀錄", wrap_columns: [ 1 ]) %>
 <% else %>
   <%= render(EmptyStateComponent.new(title: "還沒有詢問紀錄")) do |empty| %>
     <% empty.with_action { link_to "去看看店家", merchants_path, class: "btn btn-primary" } %>
