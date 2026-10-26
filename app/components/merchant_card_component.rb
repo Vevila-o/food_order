@@ -19,6 +19,12 @@ class MerchantCardComponent < ViewComponent::Base
   # 「大安區 · 0.6 公里」，缺的部分直接省略
   def area_text = [ merchant.district.presence, distance_text ].compact.join(" · ").presence
 
+  # 「上次剛訂過 10/27」：最近一筆訂購在 45 天內才有（避免連續兩個月訂同一家）
+  def recent_order_text
+    date = merchant.recently_ordered_on
+    "上次剛訂過 #{date.month}/#{date.day}" if date
+  end
+
   def delivers_at_19_text = helpers.enum_text(merchant, :delivers_at_19)
 
   def delivers_at_19_known? = !merchant.delivers_at_19_unknown?

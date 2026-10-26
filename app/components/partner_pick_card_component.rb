@@ -26,6 +26,12 @@ class PartnerPickCardComponent < ViewComponent::Base
     end
   end
 
+  # 「上次剛訂過 10/27」（45 天內）
+  def recent_order_text
+    date = merchant.recently_ordered_on
+    "上次剛訂過 #{date.month}/#{date.day}" if date
+  end
+
   def delivers_at_19_known? = !merchant.delivers_at_19_unknown?
 
   def delivery_fee_known? = !merchant.delivery_fee.nil?

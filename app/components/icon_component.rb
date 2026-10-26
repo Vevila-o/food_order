@@ -10,6 +10,7 @@ class IconComponent < ViewComponent::Base
     bookmark: "M6.5 3.5h11v17l-5.5-4-5.5 4z",
     menu: "M4 6h16M4 12h16M4 18h16",
     close: "M6 6l12 12M18 6L6 18",
+    trash: "M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12M9 7V4h6v3",
     check: "M5 12.5l4.5 4.5L19 7.5",
     home: "M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",
     history: "M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z",

@@ -52,6 +52,8 @@ zh-TW:
       registration_snapshot:
         headcount: 報名人數
       order_record:
+        merchant: 店家
+        merchant_id: 店家
         ordered_on: 訂購日期
         headcount: 人數
         total: 金額

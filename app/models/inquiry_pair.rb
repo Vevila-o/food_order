@@ -119,7 +119,7 @@ class InquiryPair
     return existing_partner if partner_id.nil?
     return if partner_id.to_s.empty?
 
-    found = Merchant.includes(:menu_items).find_by(id: partner_id)
+    found = Merchant.includes(:menu_items, :order_records).find_by(id: partner_id)
     found unless found.nil? || found.id == merchant.id
   end
 

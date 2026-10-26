@@ -29,7 +29,7 @@ module Merchants
     private
 
     def set_merchant
-      @merchant = Merchant.includes(:menu_items, :sources).find(params.expect(:merchant_id))
+      @merchant = Merchant.includes(:menu_items, :sources, :order_records).find(params.expect(:merchant_id))
     end
 
     def set_pair

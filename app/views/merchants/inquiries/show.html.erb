@@ -10,6 +10,10 @@
         <%= render(PillComponent.new(tone: :soft)) { "#{@event.held_on.month}/#{@event.held_on.day}（#{@event.weekday_label.delete_prefix('週')}）#{@event.delivery_window_label} 送達" } %>
         <%= render(PillComponent.new(tone: :base)) { "#{@event.headcount} 人" } %>
         <%= render(PillComponent.new(tone: :base)) { "總預算 #{format_money(@event.total_budget)}" } %>
+        <% @pair.forms.each do |form| %>
+          <% recent = form.merchant.recently_ordered_on %>
+          <% if recent %><%= render(PillComponent.new(tone: :secondary)) { "#{form.merchant.name}：上次剛訂過 #{recent.month}/#{recent.day}" } %><% end %>
+        <% end %>
       </div>
     <% end %>
   <% end %>

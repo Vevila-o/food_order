@@ -119,4 +119,19 @@ class MerchantCardComponentTest < ViewComponent::TestCase
 
     assert_no_selector "img"
   end
+
+  test "45 天內訂過：顯示「上次剛訂過」與日期；更早或沒訂過不顯示" do
+    travel_to Time.zone.local(2026, 10, 27, 12, 0) do
+      recent = create(:merchant)
+      create(:order_record, merchant: recent, ordered_on: Date.new(2026, 10, 6))
+      render_card(recent.reload)
+      assert_selector "span.bg-secondary", text: "上次剛訂過 10/6"
+
+      old = create(:merchant)
+      create(:order_record, merchant: old, ordered_on: Date.new(2026, 7, 1))
+      render_card(old.reload)
+      assert_no_text "上次剛訂過"
+      assert_selector "[data-ordered=true]", text: "曾訂購"
+    end
+  end
 end
