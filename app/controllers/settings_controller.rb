@@ -8,7 +8,7 @@ class SettingsController < ApplicationController
 
   def update
     if @setting.update(setting_params)
-      redirect_to edit_setting_path, notice: "已儲存收餐資訊", status: :see_other
+      redirect_to edit_setting_path, notice: "已儲存設定", status: :see_other
     else
       @event = Event.current
       render :edit, status: :unprocessable_content
@@ -22,6 +22,6 @@ class SettingsController < ApplicationController
   end
 
   def setting_params
-    params.expect(app_setting: %i[delivery_place_name delivery_address delivery_floor recipient_name recipient_phone])
+    params.expect(app_setting: %i[delivery_place_name delivery_address delivery_floor recipient_name recipient_phone tax_id])
   end
 end

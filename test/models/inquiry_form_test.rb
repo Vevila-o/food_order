@@ -67,6 +67,14 @@ class InquiryFormTest < ActiveSupport::TestCase
     assert_includes form({ @food.id.to_s => "1" }).message, "收件人：王小明，電話：0912-345-678"
   end
 
+  test "設定頁有填統一編號才寫進訊息" do
+    assert_not_includes form({ @food.id.to_s => "1" }).message, "發票"
+
+    AppSetting.instance.update!(tax_id: "12345678")
+
+    assert_includes form({ @food.id.to_s => "1" }).message, "發票統一編號：12345678"
+  end
+
   # --- 預算 ---
 
   test "預算：只算這一家，不含本場其他店家的詢問單" do

@@ -7,12 +7,14 @@ class AppSetting < ApplicationRecord
   }.freeze
 
   PHONE_FORMAT = /\A[0-9+\-()\s#]+\z/
+  TAX_ID_FORMAT = /\A\d{8}\z/ # 統一編號 8 碼（只檢查格式，不檢查檢查碼：檢查碼規則已調整過，擋錯反而誤傷）
 
-  normalizes :delivery_place_name, :delivery_address, :delivery_floor, :recipient_name, :recipient_phone,
+  normalizes :delivery_place_name, :delivery_address, :delivery_floor, :recipient_name, :recipient_phone, :tax_id,
              with: ->(value) { value.to_s.squish.presence }
 
   validates :delivery_place_name, :delivery_address, :delivery_floor, :recipient_name, length: { maximum: 100 }
   validates :recipient_phone, length: { maximum: 30 }, format: { with: PHONE_FORMAT, message: "只能填數字、+、-、括號與空格" }, allow_nil: true
+  validates :tax_id, format: { with: TAX_ID_FORMAT, message: "必須是 8 碼數字" }, allow_nil: true
   validate :delivery_location_present
 
   def self.instance
@@ -24,6 +26,9 @@ class AppSetting < ApplicationRecord
     address = [ delivery_address, delivery_floor ].compact_blank.join(" ")
     [ delivery_place_name, address.presence && "（#{address}）" ].compact_blank.join
   end
+
+  # 發票資訊，例如「發票統一編號：12345678」；沒填時為 nil
+  def invoice_text = tax_id.presence && "發票統一編號：#{tax_id}"
 
   # 收件資訊，例如「收件人：王小明，電話：0912-345-678」；都沒填時為 nil
   def recipient_text
