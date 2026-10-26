@@ -3,8 +3,7 @@
 <% partner_form = @pair.partner %>
 <% role_label = { food: "選餐食", drink: "選飲料", any: "加選另一家" }.fetch(@pair.partner_role) %>
 <% content_for :header do %>
-  <%= render(PageHeaderComponent.new(title: "訂單詢問", subtitle: two ? "#{@merchant.name} ＋ #{partner_form.merchant.name}" : @merchant.name)) do |header| %>
-    <% header.with_back_link { render BackLinkComponent.new(label: "返回店家", href: merchant_path(@merchant)) } %>
+  <%= render(PageHeaderComponent.new(title: "訂單詢問", subtitle: two ? "#{@merchant.name} ＋ #{partner_form.merchant.name}" : @merchant.name, breadcrumb: [ [ @merchant.name, merchant_path(@merchant) ], [ "訂單詢問" ] ])) do |header| %>
     <% header.with_summary do %>
       <div class="flex flex-wrap items-center gap-1.5">
         <%= render(PillComponent.new(tone: :soft)) { "#{@event.held_on.month}/#{@event.held_on.day}（#{@event.weekday_label.delete_prefix('週')}）#{@event.delivery_window_label} 送達" } %>

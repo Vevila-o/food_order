@@ -1,7 +1,6 @@
 <% content_for :title, "預覽菜單 · #{@merchant.name}" %>
 <% content_for :header do %>
-  <%= render(PageHeaderComponent.new(title: "預覽菜單", subtitle: "#{@merchant.name} · 菜單日期 #{l(@menu_import.menu_date, format: :long)}")) do |header| %>
-    <% header.with_back_link { render BackLinkComponent.new(label: @merchant.name, href: merchant_path(@merchant)) } %>
+  <%= render(PageHeaderComponent.new(title: "預覽菜單", subtitle: "#{@merchant.name} · 菜單日期 #{l(@menu_import.menu_date, format: :long)}", breadcrumb: [ [ @merchant.name, merchant_path(@merchant) ], [ "貼上菜單", new_merchant_menu_import_path(@merchant) ], [ "預覽" ] ])) do |header| %>
   <% end %>
 <% end %>
 

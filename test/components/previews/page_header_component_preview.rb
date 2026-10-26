@@ -6,11 +6,9 @@ class PageHeaderComponentPreview < ViewComponent::Preview
     end
   end
 
-  # 內頁：返回連結 + 標題 + 副標
+  # 內頁：麵包屑 + 標題 + 副標
   def detail
-    render(PageHeaderComponent.new(title: "【範例】阿嬤便當", subtitle: "大安區 · 0.2 公里")) do |header|
-      header.with_back_link { render BackLinkComponent.new(label: "返回列表", href: "/") }
-    end
+    render(PageHeaderComponent.new(title: "【範例】阿嬤便當", subtitle: "大安區 · 0.2 公里", breadcrumb: [ [ "【範例】阿嬤便當" ] ]))
   end
 
   # summary slot：標題下方放任意內容（例如標籤列）

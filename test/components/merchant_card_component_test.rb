@@ -114,6 +114,21 @@ class MerchantCardComponentTest < ViewComponent::TestCase
     assert_selector "button[aria-label=下次候選][aria-pressed=true]"
   end
 
+  test "左下角是灰色的「查看」連結，完整名稱放在 aria-label" do
+    render_card(create(:merchant, name: "阿嬤便當"))
+
+    assert_selector "article.group\\/card > div.mt-auto > a.text-muted[aria-label='查看阿嬤便當的菜單與建議搭配']", text: /\A\s*查看\s*\z/
+    assert_no_text "查看菜單與建議搭配"
+  end
+
+  test "箭頭是裝飾，卡片 hover / 聚焦時向右滑出容器，減少動態時不動" do
+    render_card(create(:merchant))
+
+    assert_selector "div.mt-auto.overflow-x-clip a span.group-hover\\/card\\:translate-x-\\[100cqw\\] svg[aria-hidden=true]"
+    assert_selector "span.group-focus-within\\/card\\:translate-x-\\[100cqw\\]"
+    assert_selector "span.motion-reduce\\:transition-none"
+  end
+
   test "店名會被跳脫" do
     render_card(create(:merchant, name: "<img src=x onerror=alert(1)>"))
 

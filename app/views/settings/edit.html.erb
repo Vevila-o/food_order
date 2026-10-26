@@ -1,7 +1,6 @@
 <% content_for :title, "設定 · Ruby Jam 訂餐助手" %>
 <% content_for :header do %>
-  <%= render(PageHeaderComponent.new(title: "設定")) do |header| %>
-    <% header.with_back_link { render BackLinkComponent.new(label: "返回首頁", href: root_path) } %>
+  <%= render(PageHeaderComponent.new(title: "設定", breadcrumb: [ [ "設定" ] ])) do |header| %>
   <% end %>
 <% end %>
 

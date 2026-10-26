@@ -1,7 +1,6 @@
 <% content_for :title, "貼上菜單 · #{@merchant.name}" %>
 <% content_for :header do %>
-  <%= render(PageHeaderComponent.new(title: "貼上菜單", subtitle: @merchant.name)) do |header| %>
-    <% header.with_back_link { render BackLinkComponent.new(label: @merchant.name, href: merchant_path(@merchant)) } %>
+  <%= render(PageHeaderComponent.new(title: "貼上菜單", subtitle: @merchant.name, breadcrumb: [ [ @merchant.name, merchant_path(@merchant) ], [ "貼上菜單" ] ])) do |header| %>
   <% end %>
 <% end %>
 
