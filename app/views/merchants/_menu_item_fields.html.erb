@@ -1,0 +1,37 @@
+<div class="rounded-box bg-base-200 p-3" data-nested-form-row>
+  <%= f.hidden_field :_destroy if f.object.persisted? %>
+  <div class="grid grid-cols-2 gap-3">
+    <div class="col-span-2">
+      <%= f.label :name, class: "mb-1 block text-sm font-medium" %>
+      <%= f.text_field :name, class: "input w-full", autocomplete: "off" %>
+    </div>
+    <div>
+      <%= f.label :category, class: "mb-1 block text-sm font-medium" %>
+      <%= f.select :category, enum_options(MenuItem, :category), {}, class: "select w-full" %>
+    </div>
+    <div>
+      <%= f.label :price, class: "mb-1 block text-sm font-medium" %>
+      <%= f.number_field :price, class: "input w-full", min: 0, inputmode: "numeric" %>
+    </div>
+    <div class="col-span-2">
+      <%= f.label :menu_date, class: "mb-1 block text-sm font-medium" %>
+      <%= f.date_field :menu_date, class: "input w-full", max: Date.current %>
+    </div>
+    <div>
+      <%= f.label :unit, class: "mb-1 block text-sm font-medium" %>
+      <%= f.text_field :unit, class: "input w-full", placeholder: "杯、份、箱、桶", autocomplete: "off" %>
+    </div>
+    <div>
+      <%= f.label :servings, class: "mb-1 block text-sm font-medium" %>
+      <%= f.number_field :servings, class: "input w-full", min: 1, inputmode: "numeric", placeholder: "整箱可供幾人" %>
+    </div>
+  </div>
+  <% if f.object.errors.any? %>
+    <ul class="mt-2 list-disc pl-5 text-sm font-medium" role="alert">
+      <% f.object.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+  <button type="button" class="btn btn-ghost btn-sm mt-2" data-action="nested-form#remove">移除這一列</button>
+</div>

@@ -1,0 +1,16 @@
+<% content_for :title, "店家 · Ruby Jam 訂餐助手" %>
+
+<h1 class="mb-4 text-2xl font-bold">店家</h1>
+
+<% if @merchants.empty? %>
+  <div class="rounded-box bg-base-200 p-6">
+    <p class="mb-3">還沒有店家。先新增一間，或到 <%= link_to "/tasks", "/tasks", class: "underline" %> 建立範例資料。</p>
+    <%= link_to "新增店家", new_merchant_path, class: "btn btn-primary" %>
+  </div>
+<% else %>
+  <div class="grid gap-4 md:grid-cols-2">
+    <% @merchants.each do |merchant| %>
+      <%= render MerchantCardComponent.new(merchant: merchant) %>
+    <% end %>
+  </div>
+<% end %>

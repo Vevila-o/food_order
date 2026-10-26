@@ -20,12 +20,10 @@ module ApplicationHelper
     date ? l(date.to_date, format: :long) : fallback
   end
 
-  # daisyUI 提示訊息樣式：notice 成功、alert 警告
-  def flash_class(type)
-    case type.to_s
-    when "notice" then "alert-success"
-    when "alert" then "alert-warning"
-    else "alert-info"
+  # 下拉選單的選項：[[中文, 值], ...]，文字取自 zh-TW.yml 的 enums
+  def enum_options(model, attribute)
+    model.public_send(attribute.to_s.pluralize).keys.map do |value|
+      [ t("enums.#{model.model_name.i18n_key}.#{attribute}.#{value}"), value ]
     end
   end
 end

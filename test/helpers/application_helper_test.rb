@@ -41,10 +41,4 @@ class ApplicationHelperTest < ActionView::TestCase
     assert_equal "未填", format_date(nil)
     assert_includes format_date(Date.new(2026, 10, 27)), "2026"
   end
-
-  test "flash 樣式" do
-    assert_equal "alert-success", flash_class(:notice)
-    assert_equal "alert-warning", flash_class("alert")
-    assert_equal "alert-info", flash_class(:other)
-  end
 end

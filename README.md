@@ -48,6 +48,16 @@ bin/dev              # 啟動 web 與 Tailwind watcher
 
 可重複執行、不會動到真實資料、正式環境拒絕執行。頁面的自動重新整理被 CSP 擋掉，執行後請手動重新整理看進度。
 
+## 元件預覽（Lookbook）
+
+共用 UI 都是 [ViewComponent](https://viewcomponent.org/)，開發環境用 [Lookbook](https://lookbook.build/) 預覽：
+
+```bash
+bin/dev   # 然後開啟 http://localhost:3000/lookbook
+```
+
+預覽檔在 `test/components/previews/`；新增元件時一併新增預覽與測試（`PreviewsTest` 會檢查）。Lookbook 只安裝在開發環境。
+
 ## 測試與檢查
 
 ```bash

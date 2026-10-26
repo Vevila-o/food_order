@@ -1,0 +1,122 @@
+<%= form_with model: merchant, class: "max-w-2xl space-y-8" do |f| %>
+  <% if merchant.errors.any? %>
+    <%= render AlertComponent.new(type: :alert) do %>
+      <div>
+        <p class="font-medium">請修正以下問題：</p>
+        <ul class="list-disc pl-5">
+          <% merchant.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+  <% end %>
+
+  <fieldset>
+    <legend class="mb-3 text-lg font-bold">基本資料</legend>
+    <%= render FieldComponent.new(form: f, attribute: :name, required: true) do %>
+      <%= f.text_field :name, class: "input w-full", autocomplete: "off" %>
+    <% end %>
+    <%= render FieldComponent.new(form: f, attribute: :address) do %>
+      <%= f.text_field :address, class: "input w-full" %>
+    <% end %>
+    <%= render FieldComponent.new(form: f, attribute: :district, hint: "例如：大安區。外區店家請填寫所在行政區，並在下方標示可送大安區") do %>
+      <%= f.text_field :district, class: "input w-full" %>
+    <% end %>
+  </fieldset>
+
+  <fieldset>
+    <legend class="mb-1 text-lg font-bold">販售內容</legend>
+    <p class="mb-3 text-sm opacity-80">至少選一項。只賣飲料（整桶、整箱）的店也可以新增。</p>
+    <label class="tap-target flex items-center gap-2">
+      <%= f.check_box :offers_food, class: "checkbox" %> <%= Merchant.human_attribute_name(:offers_food) %>
+    </label>
+    <label class="tap-target flex items-center gap-2">
+      <%= f.check_box :offers_drink, class: "checkbox" %> <%= Merchant.human_attribute_name(:offers_drink) %>
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <legend class="mb-3 text-lg font-bold">聯絡方式</legend>
+    <p class="mb-3 text-sm opacity-80">只會顯示有填的管道。系統不會自動傳訊息，產生訊息後由你複製並自行送出。</p>
+    <%= render FieldComponent.new(form: f, attribute: :phone) do %>
+      <%= f.telephone_field :phone, class: "input w-full" %>
+    <% end %>
+    <%= render FieldComponent.new(form: f, attribute: :line_id, hint: "官方帳號以 @ 開頭（@abc123），個人 ID 以 ~ 開頭（~abc123）") do %>
+      <%= f.text_field :line_id, class: "input w-full", autocomplete: "off" %>
+    <% end %>
+    <%= render FieldComponent.new(form: f, attribute: :instagram, hint: "不需要 @") do %>
+      <%= f.text_field :instagram, class: "input w-full", autocomplete: "off" %>
+    <% end %>
+    <%= render FieldComponent.new(form: f, attribute: :messenger_id, hint: "粉絲專頁的 ID 或網址名稱（m.me/ 後面那段）") do %>
+      <%= f.text_field :messenger_id, class: "input w-full", autocomplete: "off" %>
+    <% end %>
+    <%= render FieldComponent.new(form: f, attribute: :threads, hint: "Threads 沒有私訊連結，只在店家頁顯示") do %>
+      <%= f.text_field :threads, class: "input w-full", autocomplete: "off" %>
+    <% end %>
+  </fieldset>
+
+  <fieldset>
+    <legend class="mb-3 text-lg font-bold">外送與估價</legend>
+    <%= render FieldComponent.new(form: f, attribute: :delivers_at_19) do %>
+      <%= f.select :delivers_at_19, enum_options(Merchant, :delivers_at_19), {}, class: "select w-full" %>
+    <% end %>
+    <%= render FieldComponent.new(form: f, attribute: :delivers_to_daan) do %>
+      <%= f.select :delivers_to_daan, enum_options(Merchant, :delivers_to_daan), {}, class: "select w-full" %>
+    <% end %>
+    <%= render FieldComponent.new(form: f, attribute: :delivery_fee, hint: "不知道請留空，系統會顯示「待確認」，不會當成 0。免外送費請填 0") do %>
+      <%= f.number_field :delivery_fee, class: "input w-full", min: 0, inputmode: "numeric" %>
+    <% end %>
+    <%= render FieldComponent.new(form: f, attribute: :free_delivery_threshold, hint: "消費滿多少免外送費，沒有就留空") do %>
+      <%= f.number_field :free_delivery_threshold, class: "input w-full", min: 0, inputmode: "numeric" %>
+    <% end %>
+    <div class="grid grid-cols-2 gap-3">
+      <%= render FieldComponent.new(form: f, attribute: :price_per_person_min) do %>
+        <%= f.number_field :price_per_person_min, class: "input w-full", min: 0, inputmode: "numeric" %>
+      <% end %>
+      <%= render FieldComponent.new(form: f, attribute: :price_per_person_max) do %>
+        <%= f.number_field :price_per_person_max, class: "input w-full", min: 0, inputmode: "numeric" %>
+      <% end %>
+    </div>
+    <p class="-mt-2 text-sm opacity-80">每人估價選填；沒填時系統用有效的菜單推算。</p>
+  </fieldset>
+
+  <fieldset data-controller="nested-form">
+    <legend class="mb-1 text-lg font-bold">來源網址</legend>
+    <p class="mb-3 text-sm opacity-80">菜單或店家資訊的出處，只接受公開的 https 網址。</p>
+    <template data-nested-form-target="template">
+      <%= f.fields_for :sources, MerchantSource.new, child_index: "NEW_RECORD" do |sf| %>
+        <%= render "merchants/source_fields", f: sf %>
+      <% end %>
+    </template>
+    <div data-nested-form-target="container" class="space-y-3">
+      <%= f.fields_for :sources do |sf| %>
+        <%= render "merchants/source_fields", f: sf %>
+      <% end %>
+    </div>
+    <button type="button" class="btn btn-secondary btn-sm mt-3" data-action="nested-form#add">＋ 新增來源網址</button>
+  </fieldset>
+
+  <fieldset data-controller="nested-form">
+    <legend class="mb-1 text-lg font-bold">菜單</legend>
+    <p class="mb-3 text-sm opacity-80">
+      菜單日期超過 120 天或日期不明的項目，不能放進訂單詢問。價格不填會被視為尚未輸入。
+    </p>
+    <template data-nested-form-target="template">
+      <%= f.fields_for :menu_items, MenuItem.new, child_index: "NEW_RECORD" do |mf| %>
+        <%= render "merchants/menu_item_fields", f: mf %>
+      <% end %>
+    </template>
+    <div data-nested-form-target="container" class="space-y-3">
+      <%= f.fields_for :menu_items do |mf| %>
+        <%= render "merchants/menu_item_fields", f: mf %>
+      <% end %>
+    </div>
+    <button type="button" class="btn btn-secondary btn-sm mt-3" data-action="nested-form#add">＋ 新增菜單項目</button>
+  </fieldset>
+
+  <div class="flex flex-wrap gap-3">
+    <%= f.submit "儲存", class: "btn btn-primary" %>
+    <%= link_to "取消", (merchant.persisted? ? merchant_path(merchant) : merchants_path), class: "btn btn-ghost" %>
+  </div>
+<% end %>
