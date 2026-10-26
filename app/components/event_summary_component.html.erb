@@ -6,7 +6,12 @@
 
   <dl class="grid grid-cols-2 gap-2">
     <div class="flex flex-col gap-0.5 rounded-xl bg-base-100 px-3 py-2.5">
-      <dt class="text-xs text-muted">報名人數</dt>
+      <dt class="flex items-center justify-between gap-1 text-xs text-muted">
+        報名人數
+        <% if edit_href %>
+          <%= link_to "修正人數", edit_href, class: "tap-target -my-3 inline-flex items-center font-medium text-base-content underline" %>
+        <% end %>
+      </dt>
       <dd class="text-[22px] font-bold tabular-nums"><%= headcount_text %></dd>
     </div>
     <div class="flex flex-col gap-0.5 rounded-xl bg-base-100 px-3 py-2.5">

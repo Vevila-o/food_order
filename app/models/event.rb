@@ -39,6 +39,11 @@ class Event < ApplicationRecord
   # 活動代碼規則 rubyjam{YY}{MM}（rubyjam2610 = 2026 年 10 月），可手動修改
   def self.slug_for(date) = "rubyjam#{date.strftime("%y%m")}"
 
+  def self.title_for(date) = "Ruby Jam #{date.year} 年 #{date.month} 月"
+
+  # 新增活動時預設的日期：今天起算的下一個週二（今天就是週二則是今天）。Ruby Jam 通常在週二，但實際日期以使用者填的為準
+  def self.default_date(today = Date.current) = today + ((2 - today.wday) % 7)
+
   def kktix_attendees_url = "https://kktix.com/dashboard/events/#{kktix_slug}/attendees"
 
   # 「週二」由日期計算，不寫死
@@ -52,6 +57,6 @@ class Event < ApplicationRecord
     return unless held_on
 
     self.kktix_slug = self.class.slug_for(held_on) if kktix_slug.blank?
-    self.title = "Ruby Jam #{held_on.year} 年 #{held_on.month} 月" if title.blank?
+    self.title = self.class.title_for(held_on) if title.blank?
   end
 end

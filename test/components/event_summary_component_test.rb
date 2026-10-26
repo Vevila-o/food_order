@@ -69,4 +69,14 @@ class EventSummaryComponentTest < ViewComponent::TestCase
 
     assert_selector "a[href='https://kktix.com/dashboard/events/rubyjam2610/attendees'][target=_blank][rel~=noopener]", text: "KKTIX 後台"
   end
+
+  test "有給 edit_href：人數旁有「修正人數」連結，沒給就不顯示" do
+    event = create(:event, :with_headcount)
+
+    render_summary(event)
+    assert_no_link "修正人數"
+
+    render_inline(EventSummaryComponent.new(event: event, edit_href: "/events/1/edit"))
+    assert_selector "dt a[href='/events/1/edit']", text: "修正人數"
+  end
 end

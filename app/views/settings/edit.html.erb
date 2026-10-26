@@ -1,0 +1,70 @@
+<% content_for :title, "設定 · Ruby Jam 訂餐助手" %>
+<% content_for :header do %>
+  <%= render(PageHeaderComponent.new(title: "設定")) do |header| %>
+    <% header.with_back_link { render BackLinkComponent.new(label: "返回首頁", href: root_path) } %>
+  <% end %>
+<% end %>
+
+<div class="flex max-w-2xl flex-col gap-3.5">
+  <section class="rounded-2xl bg-base-100 p-4" aria-labelledby="event-heading">
+    <h2 id="event-heading" class="mb-3 text-base font-bold">活動</h2>
+    <% if @event %>
+      <p class="mb-3">
+        <span class="font-medium"><%= @event.title %></span>
+        · <%= @event.held_on.strftime("%-m/%-d") %>（<%= @event.weekday_label.delete_prefix("週") %>）
+        · <%= @event.headcount ? "#{@event.headcount} 人" : "人數尚未填寫" %>
+      </p>
+      <div class="flex flex-wrap gap-2">
+        <%= link_to "編輯活動 / 修正人數", edit_event_path(@event), class: "btn btn-primary" %>
+        <%= link_to "新增下一場", new_event_path, class: "btn btn-ghost" %>
+      </div>
+    <% else %>
+      <p class="mb-3 text-sm text-muted">還沒有活動。新增後首頁會顯示日期、人數與總預算。</p>
+      <%= link_to "新增活動", new_event_path, class: "btn btn-primary" %>
+    <% end %>
+  </section>
+
+  <%= form_with model: @setting, url: setting_path, method: :patch, class: "flex flex-col gap-3.5" do |f| %>
+    <% if @setting.errors.any? %>
+      <%= render AlertComponent.new(type: :alert) do %>
+        <div>
+          <p class="font-medium">請修正以下問題：</p>
+          <ul class="list-disc pl-5">
+            <% @setting.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+    <% end %>
+
+    <fieldset class="rounded-2xl bg-base-100 p-4">
+      <legend class="float-left mb-1 w-full text-base font-bold">收餐地點</legend>
+      <p class="mb-3 text-sm text-muted">一定會寫進詢問訊息。</p>
+      <%= render FieldComponent.new(form: f, attribute: :delivery_place_name) do %>
+        <%= f.text_field :delivery_place_name, class: "input w-full", autocomplete: "off" %>
+      <% end %>
+      <%= render FieldComponent.new(form: f, attribute: :delivery_address) do %>
+        <%= f.text_field :delivery_address, class: "input w-full", autocomplete: "off" %>
+      <% end %>
+      <%= render FieldComponent.new(form: f, attribute: :delivery_floor) do %>
+        <%= f.text_field :delivery_floor, class: "input w-full", autocomplete: "off" %>
+      <% end %>
+    </fieldset>
+
+    <fieldset class="rounded-2xl bg-base-100 p-4">
+      <legend class="float-left mb-1 w-full text-base font-bold">收件人（選填）</legend>
+      <p class="mb-3 text-sm text-muted">有填才會寫進詢問訊息，<strong>會傳給每一間詢問的店家</strong>。不想公開個人電話就留空。</p>
+      <%= render FieldComponent.new(form: f, attribute: :recipient_name) do %>
+        <%= f.text_field :recipient_name, class: "input w-full", autocomplete: "off" %>
+      <% end %>
+      <%= render FieldComponent.new(form: f, attribute: :recipient_phone) do %>
+        <%= f.telephone_field :recipient_phone, class: "input w-full", autocomplete: "off" %>
+      <% end %>
+    </fieldset>
+
+    <div class="flex flex-wrap gap-2">
+      <%= f.submit "儲存收餐資訊", class: "btn btn-primary" %>
+    </div>
+  <% end %>
+</div>

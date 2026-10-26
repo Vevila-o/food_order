@@ -67,6 +67,10 @@ zh-TW:
     models:
       menu_import: 貼上菜單
     attributes:
+      event:
+        held_on: 活動日期
+        kktix_slug: KKTIX 活動代碼
+        headcount: 報名人數
       menu_import:
         food_text: 餐食菜單
         drink_text: 飲料菜單
