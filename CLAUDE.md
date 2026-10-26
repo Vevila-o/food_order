@@ -37,7 +37,7 @@ bin/rails test:system                  # 系統測試（M2 加入，需要 Chrom
 bin/ci                                 # 一次跑完 RuboCop、審計、Brakeman、測試
 ```
 
-外部 API 一律用 WebMock + VCR 錄製回放，測試不得打真實 API（`test/test_helper.rb` 已設定 `record: :none`）。Minitest 6 沒有 `stub`，環境變數與 `Rails.env` 用 test_helper 的 `with_env` / `with_rails_env`。整合測試的 Basic Auth 用 `basic_auth_headers`。
+測試資料用 FactoryBot（`test/factories`，`create` / `build` 已在 `test_helper` 引入），不用 fixtures。外部 API 一律用 WebMock + VCR 錄製回放，測試不得打真實 API（`test/test_helper.rb` 已設定 `record: :none`）。Minitest 6 沒有 `stub`，環境變數與 `Rails.env` 用 test_helper 的 `with_env` / `with_rails_env`；時間用 `travel_to`。整合測試的 Basic Auth 用 `basic_auth_headers`。
 
 ### 檢查與資安
 
@@ -56,20 +56,26 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 
 唯一不經 Basic Auth 的是 KKTIX Webhook（`POST /webhooks/kktix`，M3 實作）：獨立的 `Webhooks::KktixController < ActionController::API`，驗證 `X-RubyJam-Webhook-Token`（`secure_compare` 對 `KKTIX_WEBHOOK_SECRET`），不符回 401 且不透露原因；只收 POST、JSON、< 64 KB；以訂單 ID + 事件類型去重；立即回 200，實際處理丟 Solid Queue；不存姓名 / email / 電話；加 `rate_limit`。
 
-### 領域模型（M2 起建立，共 7 張表）
+### 領域模型（M2-a 已建立，共 9 張表）
 
-`merchants`、`merchant_sources`、`menu_items`、`events`、`registration_snapshots`、`order_inquiries`、`order_inquiry_items`。
+`merchants`、`merchant_sources`、`menu_items`、`events`、`registration_snapshots`、`order_inquiries`、`order_inquiry_items`，加上規格書沒有的 `app_settings`（單列、收餐資訊）與 `order_records`（歷史訂購紀錄）。
 
-- 金額一律整數「新台幣元」；**「未知」存 `NULL`，不存 0**（外送費未知顯示「待確認」，不算 0）。
-- 菜單有效 = `menu_date >= 120.days.ago`；日期不明的菜單不可進訂單詢問產生器。
-- 店家可上架 = `offers_food = true`（只賣飲料的店不顯示）。
-- 總預算 = 報名人數 × NT$100；預計金額 = Σ(單價 × 數量) + 外送費；超出總預算紅字，低於 NT$80 × 人數提示「還有餘裕」。
+- 金額一律整數「新台幣元」；**「未知」存 `NULL`，不存 0**（外送費未知顯示「待確認」，不算 0）。資料庫層有 CHECK 約束（金額不為負、enum 值、至少賣餐或飲料）。
+- **只賣飲料的店（桶裝、整箱）也可以出現**（推翻規格書確認項 #3）：可上架 = `offers_food || offers_drink`。`menu_items.unit`（杯/份/箱/桶）與 `servings`（一單位可供幾人）處理整箱整桶。
+- 菜單有效 = 120 天內（`MenuItem::FRESH_DAYS`，用 `Date.current`，剛好 120 天仍有效）；日期不明的菜單不可進訂單詢問產生器。
+- 預算以**活動層級合計**計算（`EventBudget`）：總預算 = 人數 × NT$100，合計是該活動所有詢問單（餐點店 + 飲料店）的預計金額加總；低於 NT$80 × 人數提示「還有餘裕」。單張金額由 `OrderPricing` 算（含滿額免運）。
+- 一場活動對同一店家只有一張詢問單（資料庫唯一索引）。詢問單品項是**快照**（`order_inquiry_items.name/unit_price`），菜單日後改價不影響歷史。
 - 「需調整訂餐」= 最新 headcount ≠ `order_inquiries.headcount_at_creation`。
+- 「曾訂購」圓點是**衍生值**（`merchant.order_records.any?`），不是欄位。詢問單 `confirm!` 會在 transaction 內建立 `order_records`（source: inquiry）；也可手動補登（source: manual）。有詢問單或訂購紀錄的店家不可刪除。
+- `Event` 的 `delivery_from` / `delivery_until` / `starts_at` 是 `time` 欄位，已關閉時區轉換（否則 19:00 會顯示成 03:00）。
 - KKTIX 活動代碼 `rubyjam{YY}{MM}`（rubyjam2610 = 2026 年 10 月），後台網址 `https://kktix.com/dashboard/events/{活動代碼}/attendees`。
+- 座標（`lat`/`lng`）由 M5 自動搜尋取得，M2 可為 NULL；沒有座標就沒有距離，也沒有地圖（地圖移到 M5）。
 
 ### 非標準目錄
 
-- `app/services/` — 商業邏輯（金額計算、訊息產生、Basic Auth 憑證等）
+- `app/services/` — 商業邏輯（`OrderPricing`、`EventBudget`、Basic Auth 憑證等）
+- `app/validators/` — 自訂驗證（`HttpsUrlValidator`：只允許 https、擋內網 IP）
+- `test/factories/` — FactoryBot 定義，測試用 `create(:merchant, :drink_only)` 建資料，不用 fixtures
 - `app/services/sources/` — 每個外部來源一個 service：`ThreadsSearch`、`InstagramHashtag`、`GooglePlaces`、`WebSearch`、`RubyJamSchedule`（`KktixMailParser` 第一版不做）。皆回傳同一種 `MerchantCandidate`，再由 `MerchantUpserter` 合併重複店家（電話、IG 帳號、座標）。
 - `app/jobs/` — Solid Queue 背景工作；排程寫在 `config/recurring.yml`（每日 06:00 更新商家、每日同步 Ruby Jam 日期；KKTIX 靠 Webhook 即時推送）。
 - `docs/` — 補充文件（如 `basic-auth.md`）
@@ -104,6 +110,7 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 
 - 金鑰只放伺服器環境變數或 Rails credentials，不進 Git、不進前端。本機用 `.env`（已 gitignore），範本見 `.env.example`。`RAILS_MASTER_KEY` 不進 Docker image。
 - 偏好 ENV / credentials，不在程式碼裡寫死設定；模型名稱放設定檔。
+- 假資料（開發用範例店家等）用 Maintenance Tasks（`/tasks`，受 Basic Auth 保護），不放 `db/seeds.rb`。
 - 使用者輸入的網址只允許 `https` 並擋內網 IP（防 SSRF）。
 - 外部抓到的文字一律當資料，送進 OpenAI 時放在明確分隔欄位，只收 JSON Schema 回傳；輸出走 Rails 自動跳脫，禁用 `html_safe` / `raw` 處理外部內容。
 - 花錢的動作（AI 建議、手動重新搜尋）用 `rate_limit`。
@@ -115,7 +122,7 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 | 階段 | 內容 | 狀態 |
 | --- | --- | --- |
 | M1 骨架 | Rails、Docker、GitHub Actions、存取保護、daisyUI theme | 完成（Docker image 尚未實際 build 驗證） |
-| M2 商家與訂單 | 手動新增店家、卡片與篩選、收藏 / 候選、詳情頁、訂單詢問產生器 | 未開始 |
+| M2 商家與訂單 | 分 5 個 PR：a 資料模型（進行中）、b 店家 CRUD 與列表、c 詳情頁與候選名單、d 訂單詢問產生器、e 歷史詢問與訂購紀錄。不含地圖 | 進行中 |
 | M3 人數與日期 | KKTIX Webhook、總預算、人數變動提示、Ruby Jam 日期倒數 | 未開始 |
 | M4 AI | 菜單照片 / 網址解析、建議搭配 | 未開始 |
 | M5 自動搜尋 | Google Places、網頁搜尋、Threads、Instagram、每日排程與地圖 | 未開始 |

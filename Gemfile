@@ -70,3 +70,5 @@ gem "dotenv-rails", "~> 3.2", groups: [ :development, :test ]
 
 gem "webmock", "~> 3.34", group: :test
 gem "vcr", "~> 6.4", group: :test
+
+gem "factory_bot_rails", "~> 6.5", groups: [ :development, :test ]
