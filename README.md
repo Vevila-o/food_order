@@ -4,7 +4,7 @@
 
 系統負責整理候選店家與產生訊息；**聯絡店家的動作仍由使用者本人複製訊息後送出**（不自動傳訊、不線上付款、無多使用者帳號）。
 
-- Ruby 4.0.6、Rails 8.1.4、PostgreSQL（正式為 Neon）
+- Ruby 4.0.6、Rails 8.1.4、SQLite（開發、測試、正式皆同）
 - Hotwire（Turbo + Stimulus）、importmap、Tailwind CSS + daisyUI、Solid Queue
 - 測試：Minitest + WebMock + VCR
 
@@ -12,7 +12,7 @@
 
 ## 本機啟動
 
-需求：rbenv（Ruby 4.0.6）、PostgreSQL。
+需求：rbenv（Ruby 4.0.6）。不需要另外安裝資料庫，SQLite 檔會建在 `storage/`。
 
 ```bash
 bin/setup            # 安裝 gem、建立資料庫
@@ -29,7 +29,6 @@ bin/dev              # 啟動 web 與 Tailwind watcher
 | 變數 | 用途 | 里程碑 |
 | --- | --- | --- |
 | `ACCESS_USER` / `ACCESS_PASSWORD` | 全站 HTTP Basic Auth（正式環境缺少時一律 401） | M1 |
-| `DATABASE_URL` | Neon 連線字串，需含 `sslmode=require`（僅正式環境） | M1 |
 | `SOLID_QUEUE_IN_PUMA` | 單機部署讓 Puma 內嵌 Solid Queue（Dockerfile 已設定） | M1 |
 | `RAILS_MASTER_KEY` | Rails credentials 解密金鑰（不進 Git、不進 Docker image） | M1 |
 | `KKTIX_WEBHOOK_SECRET` | KKTIX Webhook 驗證（`openssl rand -hex 32`） | M3 |
@@ -64,18 +63,33 @@ GitHub Actions 會在每次 push / PR 執行 Brakeman、bundler-audit、gitleaks
 
 ## 部署
 
-Rails 預設的 Dockerfile（正式映像排除 development / test 群組）：
+Rails 預設的 Dockerfile（正式映像排除 development / test 群組）。**資料庫是 `/rails/storage` 裡的 SQLite 檔，必須把它掛成持久磁碟（volume），否則容器重建後資料會消失**：
 
 ```bash
 docker build -t ruby-jam-lunch .
 docker run -d -p 80:80 \
+  -v ruby_jam_lunch_storage:/rails/storage \
   -e RAILS_MASTER_KEY=<config/master.key 的值> \
-  -e DATABASE_URL=<Neon 連線字串> \
   -e ACCESS_USER=<帳號> -e ACCESS_PASSWORD=<密碼> \
   ruby-jam-lunch
 ```
 
-部署主機尚未決定（規格書確認項 #11）。
+- 容器以 uid 1000（`rails`）執行，掛載的磁碟要讓這個使用者可寫。
+- SQLite 同一時間只有一個寫入者：**只跑單一個容器，不要水平擴充**（單人使用沒有問題）。
+- 啟動時 `bin/docker-entrypoint` 會自動執行 `db:prepare`（建立 / 遷移）。
+- 正式環境有 4 個資料庫檔：主資料庫、快取、佇列（Solid Queue）、Cable。**要備份的是 `production.sqlite3`**，其他三個可重建。
+
+### 備份
+
+不要直接複製正在寫入的 `.sqlite3` 檔，用 SQLite 的線上備份指令：
+
+```bash
+sqlite3 storage/production.sqlite3 ".backup 'backup-$(date +%Y%m%d).sqlite3'"
+```
+
+建議每天備份一次並放到容器外。需要即時備份可再評估 [Litestream](https://litestream.io/)。
+
+部署主機尚未決定（規格書確認項 #11）；需要支援持久磁碟（例如 Fly.io volume、有掛載磁碟的 VPS）。
 
 ## 里程碑
 

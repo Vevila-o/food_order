@@ -15,7 +15,7 @@ Ruby Jam 訂餐助手：每月為 Ruby Jam 活動（週二 19:00–19:15 送達 
 
 **系統不自動傳訊息給店家**：產生訊息後，使用者點按鈕複製訊息並開啟店家的 LINE / IG / Messenger / 電話，自行送出。不在範圍：自動傳訊、線上付款、多使用者帳號。
 
-Ruby 4.0.6、Rails 8.1.4（8.2 發布後再升級）、PostgreSQL（正式為 Neon）、Hotwire（Turbo + Stimulus）、importmap、Tailwind CSS + daisyUI、Solid Queue、Minitest。
+Ruby 4.0.6、Rails 8.1.4（8.2 發布後再升級）、SQLite、Hotwire（Turbo + Stimulus）、importmap、Tailwind CSS + daisyUI、Solid Queue、Minitest。
 
 ## 常用指令
 
@@ -49,6 +49,13 @@ bin/importmap audit                  # JS 套件漏洞
 ```
 
 ## 架構
+
+### 資料庫：SQLite（開發、測試、正式皆同）
+
+使用者決定用 SQLite，**推翻規格書的 PostgreSQL / Neon**（確認項 #7 原本建議 PostgreSQL）。
+- 資料庫檔在 `storage/`。正式環境依 Rails 8 預設分成 4 個檔：`production`（主）、`production_cache`、`production_queue`（Solid Queue）、`production_cable`；Solid 三組各有 `db/*_schema.rb`，主庫的 migration 只放業務表。
+- SQLite 同時只有一個寫入者：正式環境只跑單一容器；`/rails/storage` 必須掛持久磁碟並備份（見 README）。
+- 寫 migration / 查詢時注意跨資料庫行為：用 `NULLS LAST` 明確指定 NULL 排序、`add_check_constraint` 與部分唯一索引（`where:`）SQLite 都支援。不要用 PostgreSQL 專屬功能（陣列、jsonb 運算子、`ILIKE`）。
 
 ### 單體應用、單一角色
 
@@ -130,4 +137,4 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 
 ## CI（GitHub Actions）
 
-Job：scan_ruby（Brakeman 有警告即失敗 + bundler-audit）、scan_secrets（gitleaks）、scan_js（importmap audit）、lint（RuboCop）、test（含 PostgreSQL service）。系統測試 job 待 M2 有系統測試時再加。任一失敗不合併、不部署。main 分支保護：CI 通過才能合併；Dependabot 已開啟。
+Job：scan_ruby（Brakeman 有警告即失敗 + bundler-audit）、scan_secrets（gitleaks）、scan_js（importmap audit）、lint（RuboCop）、test。系統測試 job 待 M2 有系統測試時再加。任一失敗不合併、不部署。main 分支保護：CI 通過才能合併；Dependabot 已開啟。

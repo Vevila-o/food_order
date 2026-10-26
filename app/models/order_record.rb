@@ -10,7 +10,7 @@ class OrderRecord < ApplicationRecord
   # 手動補登的是「過去」訂過的紀錄；詢問單自動產生的紀錄日期是活動日，訂餐通常在活動前幾天，所以會是未來
   validate :ordered_on_not_in_future, if: :source_manual?
 
-  # 日期倒序；日期不明（NULL）排最後。PostgreSQL 的 DESC 預設會把 NULL 排最前面，要明確指定。
+  # 日期倒序；日期不明（NULL）排最後。各資料庫對 NULL 的預設排序不同（PostgreSQL 的 DESC 把 NULL 排最前面，SQLite 排最後），明確指定才一致。
   scope :recent_first, -> { order(Arel.sql("ordered_on DESC NULLS LAST, created_at DESC")) }
 
   private
