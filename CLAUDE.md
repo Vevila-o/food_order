@@ -102,7 +102,7 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 
 ### 前端
 
-- **Stimulus**（`app/javascript/controllers`）：`stepper`（數量 −／＋／＝ 人數，改值後送出會冒泡的 `input` 事件）、`inquiry`（產生器：複製 → 標記 → 跳轉、儲存草稿）、`dismissible`（關掉提示框）、`nested-form`（動態新增 / 移除巢狀列）、`auto-submit`（篩選膠囊變更即送出）、`dialog`（「更多篩選」抽屜）、`filter-count`（「更多篩選」按鈕的條件數，按鈕在 Turbo Frame 外所以由前端即時更新）、`detail-link`（桌機開新分頁、手機與 iOS 獨立模式同分頁）。
+- **Stimulus**（`app/javascript/controllers`）：`stepper`（數量 −／＋／＝ 人數，改值後送出會冒泡的 `input` 事件）、`inquiry`（產生器：複製 → 標記 → 跳轉、儲存草稿）、`dismissible`（關掉提示框）、`nested-form`（動態新增 / 移除巢狀列）、`auto-submit`（篩選膠囊變更即送出）、`dialog`（「更多篩選」抽屜）、`filter-count`（「更多篩選」按鈕的條件數，按鈕在 Turbo Frame 外所以由前端即時更新）。店家卡片連結一律在同一個分頁換網址（不開新分頁；使用者 2026-10 要求，推翻規格書「桌機開新分頁」），所以沒有 `detail-link`。
 - **產生器的複製與跳轉順序（iOS Safari）**：在點擊事件裡先 `await navigator.clipboard.writeText`（同步呼叫），成功才 `fetch(..., { keepalive: true })` 標為已詢問（**不 await**、帶 `X-CSRF-Token`），最後 `window.location.href`。複製失敗不跳轉、不標記，反白訊息供手動複製；金額更新中（表單剛有輸入、Turbo Frame 還沒回來，最多 3 秒）不讓複製，避免複製到舊訊息。剪貼簿需要 https 或 localhost。iPhone 真機行為仍待實測。
 - **Turbo Frame**：首頁列表在 `turbo-frame#merchant-list`，篩選表單 `data-turbo-frame` 指向它並 `turbo_action: advance` 更新網址；frame 內的連結要加 `data-turbo-frame="_top"` 才會跳出 frame。
 - **CSP**：不可使用 inline `style="..."`（`style-src 'self'`），要用 Tailwind class（例如 `pb-[calc(0.5rem+env(safe-area-inset-bottom))]`）。
