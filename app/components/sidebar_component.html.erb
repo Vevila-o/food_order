@@ -1,0 +1,15 @@
+<nav aria-label="主要選單">
+  <ul class="flex flex-col gap-1">
+    <% ITEMS.each do |item| %>
+      <li>
+        <%= link_to path_for(item), class: link_class(item), aria: { current: (active?(item) ? "page" : nil) } do %>
+          <%= render IconComponent.new(name: item.icon) %>
+          <span><%= item.label %></span>
+          <% if count_for(item) %>
+            <span class="ml-auto text-xs tabular-nums <%= active?(item) ? 'font-bold' : 'text-muted' %>"><%= count_for(item) %></span>
+          <% end %>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+</nav>

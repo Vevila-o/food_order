@@ -30,7 +30,7 @@ class PageHeaderComponentTest < ViewComponent::TestCase
     render_inline(PageHeaderComponent.new(title: "標題"))
 
     assert_no_selector "a"
-    assert_no_selector "button"
+    assert_selector "button", count: 1 # 只有手機的選單按鈕
     assert_no_selector "p"
   end
 
@@ -38,5 +38,11 @@ class PageHeaderComponentTest < ViewComponent::TestCase
     render_inline(PageHeaderComponent.new(title: "<script>alert(1)</script>"))
 
     assert_no_selector "script"
+  end
+
+  test "手機的選單按鈕：開側欄抽屜，只在手機顯示（md:hidden），有 aria-label 與 44px 範圍" do
+    render_inline(PageHeaderComponent.new(title: "標題"))
+
+    assert_selector "button.md\\:hidden[aria-label=開啟選單][data-action='dialog#open'].size-11"
   end
 end

@@ -26,4 +26,15 @@ module ApplicationHelper
       [ t("enums.#{model.model_name.i18n_key}.#{attribute}.#{value}"), value ]
     end
   end
+
+  # 側欄各項目旁的數量。每個請求只查一次。
+  # 瀏覽歷史最多顯示 Merchant::HISTORY_LIMIT 間，數量也以此為上限。
+  def sidebar_counts
+    @sidebar_counts ||= {
+      history: [ Merchant.where.not(last_viewed_at: nil).count, Merchant::HISTORY_LIMIT ].min,
+      favorites: Merchant.where(favorited: true).count,
+      inquiries: OrderInquiry.count,
+      orders: OrderRecord.count
+    }
+  end
 end
