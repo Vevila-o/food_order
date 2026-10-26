@@ -29,7 +29,7 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "legend", text: "發票（選填）"
     assert_select "input[name='app_setting[tax_id]'][maxlength='8'][inputmode=numeric]"
-    assert_select "p", text: /不會寫進詢問訊息/
+    assert_select "p", text: /寫進詢問訊息/
   end
 
   test "儲存統一編號；頁面帶出已存的值" do

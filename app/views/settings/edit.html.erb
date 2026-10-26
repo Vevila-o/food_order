@@ -65,7 +65,7 @@
 
     <fieldset class="rounded-2xl bg-base-100 p-4">
       <legend class="float-left mb-1 w-full text-base font-bold">發票（選填）</legend>
-      <p class="mb-3 text-sm text-muted">公司統一編號，開發票時使用。目前只存在這裡，不會寫進詢問訊息。</p>
+      <p class="mb-3 text-sm text-muted">公司統一編號，開發票時使用。有填才會寫進詢問訊息（一行「發票統一編號：…」），會傳給每一間詢問的店家。</p>
       <%= render FieldComponent.new(form: f, attribute: :tax_id, hint: "8 碼數字") do %>
         <%= f.text_field :tax_id, class: "input w-full", inputmode: "numeric", maxlength: 8, autocomplete: "off" %>
       <% end %>

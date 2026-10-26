@@ -215,7 +215,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_27_000024) do
   add_foreign_key "order_groups", "events"
   add_foreign_key "order_inquiries", "events"
   add_foreign_key "order_inquiries", "merchants", on_delete: :restrict
-  add_foreign_key "order_inquiries", "order_groups"
   add_foreign_key "order_inquiry_items", "menu_items", on_delete: :nullify
   add_foreign_key "order_inquiry_items", "order_inquiries", on_delete: :cascade
   add_foreign_key "order_records", "events", on_delete: :nullify

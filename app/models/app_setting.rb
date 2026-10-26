@@ -27,6 +27,9 @@ class AppSetting < ApplicationRecord
     [ delivery_place_name, address.presence && "（#{address}）" ].compact_blank.join
   end
 
+  # 發票資訊，例如「發票統一編號：12345678」；沒填時為 nil
+  def invoice_text = tax_id.presence && "發票統一編號：#{tax_id}"
+
   # 收件資訊，例如「收件人：王小明，電話：0912-345-678」；都沒填時為 nil
   def recipient_text
     parts = []

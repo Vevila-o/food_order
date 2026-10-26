@@ -76,7 +76,7 @@ class InquiryForm
 
   def message
     @message ||= InquiryMessage.new(
-      event: event, location: setting.delivery_location_text, recipient: setting.recipient_text, subtotal: pricing.subtotal,
+      event: event, location: setting.delivery_location_text, recipient: setting.recipient_text, invoice: setting.invoice_text, subtotal: pricing.subtotal,
       lines: lines.map { |line| InquiryMessage::Line.new(name: line.menu_item.name, unit: line.menu_item.unit, quantity: line.quantity) }
     ).text
   end

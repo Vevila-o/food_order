@@ -86,10 +86,13 @@ class AppSettingTest < ActiveSupport::TestCase
     end
   end
 
-  test "統一編號不會寫進詢問訊息的收件資訊" do
+  test "invoice_text：有填才有，且和收件資訊分開" do
     setting = AppSetting.instance
+    assert_nil setting.invoice_text
+
     setting.update!(tax_id: "12345678", recipient_name: "王小明")
 
+    assert_equal "發票統一編號：12345678", setting.invoice_text
     assert_not_includes setting.recipient_text.to_s, "12345678"
   end
 end
