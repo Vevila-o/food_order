@@ -13,7 +13,7 @@ class InquiryConfirmationsTest < ActionDispatch::IntegrationTest
 
     assert_select "thead th", text: "訂購"
     assert_select "tbody form[action=?]", inquiry_confirmation_path(@inquiry) do
-      assert_select "button", text: "訂購"
+      assert_select "button[aria-label='記錄已訂購：阿嬤便當'][title=記錄已訂購] svg" # 打勾圖示
     end
     assert_select "tbody form[data-turbo-confirm]"
   end
@@ -52,8 +52,8 @@ class InquiryConfirmationsTest < ActionDispatch::IntegrationTest
     get inquiries_path
 
     assert_select "tbody span.bg-primary", text: "已訂購"
-    assert_select "tbody form[action=?] button", inquiry_confirmation_path(@inquiry), text: "取消訂購"
-    assert_select "tbody form button", text: "訂購", count: 0
+    assert_select "tbody form[action=?] button[aria-label='取消訂購：阿嬤便當'][title=取消訂購] svg", inquiry_confirmation_path(@inquiry) # 叉叉圖示
+    assert_select "tbody button[aria-label^='記錄已訂購']", count: 0
   end
 
   test "取消訂購：退回已詢問，刪掉自動產生的紀錄，曾訂購圓點回到沒訂過" do

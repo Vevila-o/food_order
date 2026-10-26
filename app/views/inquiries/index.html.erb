@@ -15,16 +15,24 @@
        # 訂購：按下去記錄「這家有訂購」，之後店家卡片的圓點變橘色、出現在「已訂購」
        order_cell =
          if inquiry.confirmed?
-           content_tag(:span, class: "flex flex-col items-start gap-1") do
+           # 叉叉 = 取消訂購（配對的兩家一起取消）
+           content_tag(:span, class: "flex items-center gap-1.5") do
              safe_join([
                render(PillComponent.new(tone: :primary)) { "已訂購" },
-               button_to("取消訂購", inquiry_confirmation_path(inquiry), method: :delete, class: "btn btn-xs btn-ghost -ml-2",
-                         form: { class: "inline", data: { turbo_confirm: "取消#{partner ? "「#{inquiry.merchant.name}」與「#{partner.merchant.name}」" : "「#{inquiry.merchant.name}」"}的訂購紀錄？「已訂購」裡自動產生的紀錄也會一併移除。" } })
+               button_to(inquiry_confirmation_path(inquiry), method: :delete, title: "取消訂購", aria: { label: "取消訂購：#{inquiry.merchant.name}" },
+                         class: "inline-flex size-11 cursor-pointer items-center justify-center rounded-full bg-base-200 hover:bg-warning-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-base-content",
+                         form: { class: "contents", data: { turbo_confirm: "取消#{partner ? "「#{inquiry.merchant.name}」與「#{partner.merchant.name}」" : "「#{inquiry.merchant.name}」"}的訂購紀錄？「已訂購」裡自動產生的紀錄也會一併移除。" } }) do
+                 render IconComponent.new(name: :close, size: 20)
+               end
              ])
            end
          else
-           button_to("訂購", inquiry_confirmation_path(inquiry), method: :post, class: "btn btn-sm btn-primary",
-                     form: { class: "inline", data: { turbo_confirm: (partner ? "記錄「#{inquiry.merchant.name}」與搭配的「#{partner.merchant.name}」都已訂購？" : "記錄「#{inquiry.merchant.name}」已訂購？") } })
+           # 打勾 = 記錄已訂購（配對的兩家一起記錄）
+           button_to(inquiry_confirmation_path(inquiry), method: :post, title: "記錄已訂購", aria: { label: "記錄已訂購：#{inquiry.merchant.name}" },
+                     class: "inline-flex size-11 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-base-content",
+                     form: { class: "contents", data: { turbo_confirm: (partner ? "記錄「#{inquiry.merchant.name}」與搭配的「#{partner.merchant.name}」都已訂購？" : "記錄「#{inquiry.merchant.name}」已訂購？") } }) do
+             render IconComponent.new(name: :check, size: 20)
+           end
          end
        # 只有目前這一場能重開產生器（帶著搭檔）；歷史活動的詢問單只供查看
        open_cell = inquiry.event_id == @current_event&.id ? link_to("開啟詢問", merchant_inquiry_path(inquiry.merchant, partner_id: partner&.merchant_id.to_s), class: "font-medium underline") : "—"
