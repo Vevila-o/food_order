@@ -147,25 +147,23 @@ class InquiryPairTest < ActiveSupport::TestCase
 
   # --- 預算 ---
 
-  test "預算：兩家試算 + 本場其他店家，不重複計入這兩家已存的詢問單" do
-    pair(quantities: both(meal: 10, drink: 10)).save # 已存：960 + 350 = 1310
+  test "預算：只算目前這兩家的試算，不含本場其他店家或這兩家已存的詢問單" do
+    pair(quantities: both(meal: 10, drink: 10)).save
     other = create(:merchant)
-    create(:order_inquiry, event: @event, merchant: other, subtotal: 100, delivery_fee: 0, total: 100)
+    create(:order_inquiry, event: @event, merchant: other, subtotal: 5000, delivery_fee: 0, total: 5000)
 
     p = pair(quantities: both(meal: 5, drink: 5)) # 試算：450+60 + 150+50 = 710
 
-    assert_equal [ other ], p.others.map(&:merchant)
-    assert_equal 810, p.budget.known_total
+    assert_equal 710, p.budget.known_total
     assert_equal 1800, p.budget.total_budget
   end
 
-  test "預算：沒被選到但已有詢問單的搭檔仍計入（它還在資料庫裡）" do
+  test "預算：沒選的那家不計（即使它有已存的詢問單）" do
     pair(quantities: both(meal: 10, drink: 10)).save
 
     p = pair(quantities: both(meal: 10, drink: 0))
 
-    assert_equal [ @drink_shop ], p.others.map(&:merchant)
-    assert_equal 960 + 350, p.budget.known_total
+    assert_equal 960, p.budget.known_total
   end
 
   test "預算：超出時狀態是 over" do

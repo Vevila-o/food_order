@@ -69,15 +69,15 @@ class InquiryFormTest < ActiveSupport::TestCase
 
   # --- 預算 ---
 
-  test "預算：這張加上本場其他店家的詢問單" do
+  test "預算：只算這一家，不含本場其他店家的詢問單" do
     other = create(:merchant)
     create(:order_inquiry, event: @event, merchant: other, subtotal: 500, delivery_fee: 0, total: 500)
 
     f = form({ @food.id.to_s => "10" }) # 900 + 60 = 960
 
-    assert_equal 1460, f.budget.known_total
+    assert_equal 960, f.budget.known_total
     assert_equal 1800, f.budget.total_budget
-    assert_equal :ok, f.budget.status
+    assert_equal :room, f.budget.status
   end
 
   test "預算：超出 NT$100 × 人數" do

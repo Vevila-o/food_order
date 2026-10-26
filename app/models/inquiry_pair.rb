@@ -3,7 +3,7 @@
 # 包兩個既有的 InquiryForm（單店的驗證、金額、訊息規則完全沿用），負責配對才有的規則：
 #   - 搭檔從哪來：網址 partner_id（空字串 = 明確沒有）> 這間店詢問單所在組的另一家（兩張都還是草稿才自動帶出；
 #     已經按過聯絡按鈕（已詢問）的，重新打開就是乾淨的單店，要從「已詢問」頁進來才會帶 partner_id）
-#   - 兩家合計（小計、外送費、預計金額；有外送費未知就是 nil）與本場預算（不重複計入這兩家已存的詢問單）
+#   - 兩家合計（小計、外送費、預計金額；有外送費未知就是 nil）與總預算比較：只算目前這一家或配對的兩家，不含本場其他店家
 #   - 儲存：兩家一起存、綁成一組（OrderGroup）、只有被按聯絡按鈕的那家標為已詢問
 #   - 換搭檔 / 移除：舊搭檔的詢問單保留，只是離組；組內不足兩張就刪組
 #
@@ -78,13 +78,9 @@ class InquiryPair
     end
   end
 
-  # 預算比較用：沒被選到的店家若已有詢問單，仍算（它存在資料庫裡），被選到的店家用試算取代已存的
-  def others
-    @others ||= event.order_inquiries.includes(:merchant).where.not(merchant_id: selected_forms.map { |form| form.merchant.id }).to_a
-  end
-
+  # 預算比較：只算目前這一家或配對的兩家（有選品項的試算），不含本場其他店家的詢問單
   def budget
-    @budget ||= EventBudget.new(event, inquiries: others + selected_forms.map(&:draft_inquiry))
+    @budget ||= EventBudget.new(event, inquiries: selected_forms.map(&:draft_inquiry))
   end
 
   validate :forms_valid

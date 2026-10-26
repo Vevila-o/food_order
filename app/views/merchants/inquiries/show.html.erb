@@ -95,7 +95,7 @@
     <% end %>
 
     <% parts = @pair.selected_forms.size > 1 ? @pair.selected_forms.map { |form| BudgetSummaryComponent::Part.new(name: form.merchant.name, pricing: form.pricing) } : [] %>
-    <%= render BudgetSummaryComponent.new(pricing: @pair.combined, budget: @pair.budget, others: @pair.others, any_lines: @pair.any_lines?, parts: parts) %>
+    <%= render BudgetSummaryComponent.new(pricing: @pair.combined, budget: @pair.budget, any_lines: @pair.any_lines?, parts: parts) %>
 
     <% @pair.forms.each do |form| %>
       <% sendable = @pair.errors.empty? && form.any_lines? %>

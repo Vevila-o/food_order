@@ -6,16 +6,15 @@ class BudgetSummaryComponent < ViewComponent::Base
   Part = Data.define(:name, :pricing)
 
   # pricing：小計 / 外送費 / 預計金額（單店是 OrderPricing::Result，兩家是合計）；budget：EventBudget（含試算）；
-  # others：本場其他店家的詢問單；any_lines：有沒有選品項；parts：兩家都有選時各家的明細（單店不用給）
-  def initialize(pricing:, budget:, others: [], any_lines: true, parts: [])
+  # any_lines：有沒有選品項；parts：兩家都有選時各家的明細（單店不用給）
+  def initialize(pricing:, budget:, any_lines: true, parts: [])
     @pricing = pricing
     @budget = budget
-    @others = others
     @any_lines = any_lines
     @parts = parts
   end
 
-  attr_reader :pricing, :budget, :others, :parts
+  attr_reader :pricing, :budget, :parts
 
   def show_parts? = parts.size > 1
 

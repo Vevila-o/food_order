@@ -81,14 +81,9 @@ class InquiryForm
     ).text
   end
 
-  # 本場預算：這張（尚未存或會被覆蓋）+ 這場活動其他店家的詢問單
+  # 預算比較：只算這一家的試算（不含本場其他店家的詢問單；兩家配對的合計見 InquiryPair#budget）
   def budget
-    @budget ||= EventBudget.new(event, inquiries: others + [ draft_inquiry ])
-  end
-
-  # 本場其他店家已有的詢問單
-  def others
-    @others ||= event.order_inquiries.where.not(merchant_id: merchant.id).to_a
+    @budget ||= EventBudget.new(event, inquiries: [ draft_inquiry ])
   end
 
   # 預算試算用的詢問單（不存資料庫）
