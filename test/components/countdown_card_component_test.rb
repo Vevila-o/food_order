@@ -55,4 +55,12 @@ class CountdownCardComponentTest < ViewComponent::TestCase
 
     assert_selector "section.shadow-md"
   end
+
+  test "標題是「倒數」；數字方塊撐滿標題下方的空白" do
+    card(now: Time.zone.local(2026, 10, 22, 14, 30))
+
+    assert_selector "h2", text: "倒數"
+    assert_selector "div.grid.flex-1.grid-cols-2[aria-hidden=true]"
+    assert_selector "div.grid > div.justify-center", count: 2
+  end
 end

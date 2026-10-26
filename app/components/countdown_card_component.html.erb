@@ -1,5 +1,5 @@
-<section class="flex w-full flex-col justify-between gap-2.5 rounded-2xl bg-base-100 p-4 shadow-md md:w-60 md:shrink-0" aria-label="倒數計時">
-  <span class="text-[13px] font-medium">距離下一場 Ruby Jam</span>
+<section class="flex w-full flex-col gap-2.5 rounded-2xl bg-base-100 p-4 shadow-md md:w-60 md:shrink-0" aria-label="倒數計時">
+  <h2 class="text-[13px] font-medium">倒數</h2>
   <% if started? %>
     <p class="text-lg font-bold">已開始或已結束</p>
     <% if edit_href %>
@@ -7,12 +7,13 @@
     <% end %>
   <% else %>
     <p class="sr-only"><%= spoken_text %></p>
-    <div class="grid grid-cols-2 gap-2" aria-hidden="true">
-      <div class="flex flex-col items-center rounded-xl bg-soft px-3 py-2">
+    <%# 方格撐滿標題下方的空白（卡片和左邊的活動摘要卡同高） %>
+    <div class="grid flex-1 grid-cols-2 gap-2" aria-hidden="true">
+      <div class="flex flex-col items-center justify-center rounded-xl bg-soft px-3 py-2">
         <span class="text-[28px] font-bold leading-tight tabular-nums"><%= days_text %></span>
         <span class="text-xs">天 dd</span>
       </div>
-      <div class="flex flex-col items-center rounded-xl bg-soft px-3 py-2">
+      <div class="flex flex-col items-center justify-center rounded-xl bg-soft px-3 py-2">
         <span class="text-[28px] font-bold leading-tight tabular-nums"><%= hours_text %></span>
         <span class="text-xs">時 hh</span>
       </div>
