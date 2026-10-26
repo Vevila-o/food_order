@@ -67,3 +67,6 @@ end
 gem "rails-i18n", "~> 8.0"
 
 gem "dotenv-rails", "~> 3.2", groups: [ :development, :test ]
+
+gem "webmock", "~> 3.34", group: :test
+gem "vcr", "~> 6.4", group: :test
