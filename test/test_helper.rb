@@ -26,6 +26,9 @@ module ActiveSupport
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
 
+    # FactoryBot：create(:merchant)、build(:event) 等（定義在 test/factories）
+    include FactoryBot::Syntax::Methods
+
     # 暫時設定環境變數（值為 nil 代表移除），區塊結束後還原。
     def with_env(vars)
       original = vars.keys.index_with { |key| ENV[key] }
