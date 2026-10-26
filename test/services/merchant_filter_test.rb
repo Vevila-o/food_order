@@ -30,17 +30,42 @@ class MerchantFilterTest < ActiveSupport::TestCase
     create(:merchant, name: "只有餐")
     create(:merchant, :drink_only, name: "僅飲料")
 
-    assert_equal [ "餐飲" ], names(kind: "food_and_drink")
-    assert_equal [ "只有餐" ], names(kind: "food_only")
-    assert_equal [ "僅飲料" ], names(kind: "drink_only")
+    assert_equal [ "餐飲" ], names(kinds: [ "food_and_drink" ])
+    assert_equal [ "只有餐" ], names(kinds: [ "food_only" ])
+    assert_equal [ "僅飲料" ], names(kinds: [ "drink_only" ])
     assert_equal 3, names.size
   end
 
   test "不認得的類型被忽略，不會當成條件或進入 SQL" do
     create(:merchant)
 
-    assert_equal 1, names(kind: "1; DROP TABLE merchants").size, "不認得的類型應被忽略（不篩選）"
-    assert_equal 0, MerchantFilter.new({ kind: "evil" }).active_count
+    assert_equal 1, names(kinds: [ "1; DROP TABLE merchants" ]).size, "不認得的類型應被忽略（不篩選）"
+    assert_equal 0, MerchantFilter.new({ kinds: [ "evil" ] }).active_count
+  end
+
+  test "類型可複選（OR）：同時勾餐＋飲與僅飲料就兩種都顯示" do
+    create(:merchant, name: "餐飲", offers_drink: true)
+    create(:merchant, name: "只有餐")
+    create(:merchant, :drink_only, name: "僅飲料")
+
+    assert_equal %w[僅飲料 餐飲].sort, names(kinds: %w[food_and_drink drink_only]).sort
+    assert_equal %w[只有餐 僅飲料 餐飲].sort, names(kinds: %w[food_only food_and_drink drink_only]).sort
+  end
+
+  test "類型與其他條件同時成立（AND）" do
+    create(:merchant, :drink_only, name: "僅飲料免運", delivery_fee: 0)
+    create(:merchant, :drink_only, name: "僅飲料收費", delivery_fee: 60)
+    create(:merchant, name: "只有餐免運", delivery_fee: 0)
+
+    assert_equal [ "僅飲料免運" ], names(kinds: [ "drink_only" ], free_delivery: "1")
+  end
+
+  test "重複與不認得的類型被忽略，kind?" do
+    filter = MerchantFilter.new({ kinds: %w[food_only food_only evil] })
+
+    assert_equal [ "food_only" ], filter.kinds
+    assert filter.kind?(:food_only)
+    assert_not filter.kind?(:drink_only)
   end
 
   # --- 19:00 外送 ---
@@ -143,7 +168,7 @@ class MerchantFilterTest < ActiveSupport::TestCase
   end
 
   test "啟用的條件數" do
-    filter = MerchantFilter.new({ kind: "food_only", free_delivery: "1", favorited: "1", sort: "name" })
+    filter = MerchantFilter.new({ kinds: [ "food_only" ], free_delivery: "1", favorited: "1", sort: "name" })
 
     assert_equal 3, filter.active_count
     assert filter.active?
@@ -159,7 +184,7 @@ class MerchantFilterTest < ActiveSupport::TestCase
   end
 
   test "接受 ActionController::Parameters" do
-    params = ActionController::Parameters.new(favorited: "1", kind: "food_only").permit(:favorited, :kind)
+    params = ActionController::Parameters.new(favorited: "1", kinds: [ "food_only" ]).permit(:favorited, kinds: [])
 
     assert_equal 2, MerchantFilter.new(params).active_count
   end

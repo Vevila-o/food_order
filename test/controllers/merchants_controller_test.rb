@@ -36,23 +36,30 @@ class MerchantsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "article", count: 1
     assert_select "article h2 a", text: "免運店"
-    assert_select "turbo-frame#merchant-list strong", text: "1"
-    assert_select "turbo-frame#merchant-list", text: /已套用 1 個條件/
+    assert_select "turbo-frame#merchant-list h2", text: /符合條件\s*1\s*家/
     assert_select "turbo-frame#merchant-list a", text: "清除篩選"
   end
 
-  test "篩選表單帶入目前條件（側欄與抽屜各一份）" do
-    get merchants_path, params: { filter: { favorited: "1", kind: "food_only" } }
+  test "篩選列帶入目前條件：膠囊與抽屜共用同一個表單" do
+    get merchants_path, params: { filter: { favorited: "1", kinds: [ "food_and_drink", "food_only" ], sort: "name" } }
 
-    assert_select "input[name='filter[favorited]'][checked]", count: 2
-    assert_select "input[type=radio][value=food_only][checked]", count: 2
-    assert_select "dialog.modal form button", text: "套用"
+    assert_select "form#filter-form input[name='filter[favorited]'][checked]", count: 1
+    assert_select "form#filter-form input[name='filter[kinds][]'][value=food_and_drink][checked]", count: 1
+    assert_select "dialog input[name='filter[kinds][]'][value=food_only][checked][form=filter-form]", count: 1
+    assert_select "dialog select[form=filter-form] option[value=name][selected]"
+    assert_select "dialog button[type=submit][form=filter-form]", text: "套用"
   end
 
-  test "手機篩選按鈕顯示條件數" do
-    get merchants_path, params: { filter: { favorited: "1", daan: "1" } }
+  test "「更多篩選」按鈕顯示抽屜裡已啟用的條件數" do
+    get merchants_path, params: { filter: { favorited: "1", daan: "1", never_ordered: "1" } }
 
-    assert_select "button[data-action='dialog#open']", text: /篩選 \(2\)/
+    assert_select "button[data-action='dialog#open']", text: /更多篩選 \(2\)/
+  end
+
+  test "沒有抽屜條件時「更多篩選」不顯示數字" do
+    get merchants_path, params: { filter: { favorited: "1" } }
+
+    assert_select "button[data-action='dialog#open']", text: /\A\s*更多篩選\s*\z/
   end
 
   test "沒有符合條件：說明哪些資料不會被篩掉，並提供清除" do
@@ -84,7 +91,7 @@ class MerchantsControllerTest < ActionDispatch::IntegrationTest
   test "不認得的篩選參數被忽略，不會報錯" do
     create(:merchant)
 
-    get merchants_path, params: { filter: { kind: "evil", sort: "random", hack: "1" }, other: "x" }
+    get merchants_path, params: { filter: { kinds: [ "evil" ], sort: "random", hack: "1" }, other: "x" }
 
     assert_response :success
     assert_select "article", count: 1
@@ -118,7 +125,7 @@ class MerchantsControllerTest < ActionDispatch::IntegrationTest
     get root_path
 
     assert_response :success
-    assert_select "h1", "店家"
+    assert_select "h1", "找今晚的餐"
   end
 
   # --- show ---
@@ -159,7 +166,7 @@ class MerchantsControllerTest < ActionDispatch::IntegrationTest
 
     get merchant_path(merchant)
 
-    assert_select ".badge-warning", text: "菜單可能過期"
+    assert_select "span.bg-secondary", text: "菜單可能過期"
   end
 
   test "整箱飲料顯示可供人數與每人單價" do

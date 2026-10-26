@@ -37,9 +37,9 @@ class PriceEstimateComponentTest < ViewComponent::TestCase
     assert_no_text "每人"
   end
 
-  test "算不出來：估價未填（較淡的字）" do
+  test "算不出來：估價未填" do
     render_for(build(:merchant))
 
-    assert_selector "span.opacity-70", text: "估價未填"
+    assert_selector "span.rounded-full", text: "估價未填"
   end
 end

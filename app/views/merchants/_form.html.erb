@@ -1,4 +1,4 @@
-<%= form_with model: merchant, class: "max-w-2xl space-y-8" do |f| %>
+<%= form_with model: merchant, class: "flex max-w-2xl flex-col gap-3.5" do |f| %>
   <% if merchant.errors.any? %>
     <%= render AlertComponent.new(type: :alert) do %>
       <div>
@@ -12,8 +12,8 @@
     <% end %>
   <% end %>
 
-  <fieldset>
-    <legend class="mb-3 text-lg font-bold">基本資料</legend>
+  <fieldset class="rounded-2xl bg-base-100 p-4">
+    <legend class="float-left mb-3 w-full text-base font-bold">基本資料</legend>
     <%= render FieldComponent.new(form: f, attribute: :name, required: true) do %>
       <%= f.text_field :name, class: "input w-full", autocomplete: "off" %>
     <% end %>
@@ -25,9 +25,9 @@
     <% end %>
   </fieldset>
 
-  <fieldset>
-    <legend class="mb-1 text-lg font-bold">販售內容</legend>
-    <p class="mb-3 text-sm opacity-80">至少選一項。只賣飲料（整桶、整箱）的店也可以新增。</p>
+  <fieldset class="rounded-2xl bg-base-100 p-4">
+    <legend class="float-left mb-1 w-full text-base font-bold">販售內容</legend>
+    <p class="mb-3 text-sm text-muted">至少選一項。只賣飲料（整桶、整箱）的店也可以新增。</p>
     <label class="tap-target flex items-center gap-2">
       <%= f.check_box :offers_food, class: "checkbox" %> <%= Merchant.human_attribute_name(:offers_food) %>
     </label>
@@ -36,9 +36,9 @@
     </label>
   </fieldset>
 
-  <fieldset>
-    <legend class="mb-3 text-lg font-bold">聯絡方式</legend>
-    <p class="mb-3 text-sm opacity-80">只會顯示有填的管道。系統不會自動傳訊息，產生訊息後由你複製並自行送出。</p>
+  <fieldset class="rounded-2xl bg-base-100 p-4">
+    <legend class="float-left mb-3 w-full text-base font-bold">聯絡方式</legend>
+    <p class="mb-3 text-sm text-muted">只會顯示有填的管道。系統不會自動傳訊息，產生訊息後由你複製並自行送出。</p>
     <%= render FieldComponent.new(form: f, attribute: :phone) do %>
       <%= f.telephone_field :phone, class: "input w-full" %>
     <% end %>
@@ -56,8 +56,8 @@
     <% end %>
   </fieldset>
 
-  <fieldset>
-    <legend class="mb-3 text-lg font-bold">外送與估價</legend>
+  <fieldset class="rounded-2xl bg-base-100 p-4">
+    <legend class="float-left mb-3 w-full text-base font-bold">外送與估價</legend>
     <%= render FieldComponent.new(form: f, attribute: :delivers_at_19) do %>
       <%= f.select :delivers_at_19, enum_options(Merchant, :delivers_at_19), {}, class: "select w-full" %>
     <% end %>
@@ -78,12 +78,12 @@
         <%= f.number_field :price_per_person_max, class: "input w-full", min: 0, inputmode: "numeric" %>
       <% end %>
     </div>
-    <p class="-mt-2 text-sm opacity-80">每人估價選填；沒填時系統用有效的菜單推算。</p>
+    <p class="-mt-2 text-sm text-muted">每人估價選填；沒填時系統用有效的菜單推算。</p>
   </fieldset>
 
-  <fieldset data-controller="nested-form">
-    <legend class="mb-1 text-lg font-bold">來源網址</legend>
-    <p class="mb-3 text-sm opacity-80">菜單或店家資訊的出處，只接受公開的 https 網址。</p>
+  <fieldset class="rounded-2xl bg-base-100 p-4" data-controller="nested-form">
+    <legend class="float-left mb-1 w-full text-base font-bold">來源網址</legend>
+    <p class="mb-3 text-sm text-muted">菜單或店家資訊的出處，只接受公開的 https 網址。</p>
     <template data-nested-form-target="template">
       <%= f.fields_for :sources, MerchantSource.new, child_index: "NEW_RECORD" do |sf| %>
         <%= render "merchants/source_fields", f: sf %>
@@ -97,9 +97,9 @@
     <button type="button" class="btn btn-secondary btn-sm mt-3" data-action="nested-form#add">＋ 新增來源網址</button>
   </fieldset>
 
-  <fieldset data-controller="nested-form">
-    <legend class="mb-1 text-lg font-bold">菜單</legend>
-    <p class="mb-3 text-sm opacity-80">
+  <fieldset class="rounded-2xl bg-base-100 p-4" data-controller="nested-form">
+    <legend class="float-left mb-1 w-full text-base font-bold">菜單</legend>
+    <p class="mb-3 text-sm text-muted">
       菜單日期超過 120 天或日期不明的項目，不能放進訂單詢問。價格不填會被視為尚未輸入。
     </p>
     <template data-nested-form-target="template">
@@ -115,7 +115,7 @@
     <button type="button" class="btn btn-secondary btn-sm mt-3" data-action="nested-form#add">＋ 新增菜單項目</button>
   </fieldset>
 
-  <div class="flex flex-wrap gap-3">
+  <div class="flex flex-wrap gap-3 pb-6">
     <%= f.submit "儲存", class: "btn btn-primary" %>
     <%= link_to "取消", (merchant.persisted? ? merchant_path(merchant) : merchants_path), class: "btn btn-ghost" %>
   </div>

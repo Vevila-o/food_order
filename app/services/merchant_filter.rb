@@ -1,4 +1,5 @@
 # 首頁篩選與排序：把網址參數轉成店家清單，重用 Merchant 既有的 scopes。
+# 網址參數：filter[kinds][]（可複選）、filter[sort]、filter[<旗標>]=1
 #
 # 規則（M2-b 決定）：
 #   - 19:00 外送：排除「明確不可」，待確認也顯示（否則清單幾乎全空）
@@ -13,12 +14,13 @@ class MerchantFilter
   FLAGS = %w[delivers_at_19 free_delivery affordable daan fresh_menu favorited shortlisted never_ordered].freeze
   TRUTHY = %w[1 true on].freeze
 
-  attr_reader :kind, :sort, :flags
+  attr_reader :kinds, :sort, :flags
 
   # params：篩選參數（permit 過的 ActionController::Parameters 或 Hash）；budget：本場總預算（免運門檻比較用）
   def initialize(params = {}, budget: nil)
     params = params.to_h.stringify_keys
-    @kind = params["kind"].presence_in(KINDS)
+    # 類型可複選（OR）：同時勾「餐＋飲」與「僅飲料」就是兩種都顯示；都沒勾 = 不篩選
+    @kinds = Array(params["kinds"]).map(&:to_s).select { |kind| KINDS.include?(kind) }.uniq
     @sort = params["sort"].presence_in(SORTS) || DEFAULT_SORT
     @flags = FLAGS.select { |flag| TRUTHY.include?(params[flag].to_s) }
     @budget = budget
@@ -27,7 +29,9 @@ class MerchantFilter
   def flag?(name) = flags.include?(name.to_s)
 
   # 啟用中的篩選條件數（不含排序），顯示在手機的「篩選 (N)」按鈕
-  def active_count = flags.size + (kind ? 1 : 0)
+  def kind?(name) = kinds.include?(name.to_s)
+
+  def active_count = flags.size + kinds.size
 
   def active? = active_count.positive?
 
@@ -42,7 +46,7 @@ class MerchantFilter
 
   def filtered_relation
     relation = Merchant.includes(:menu_items, :order_records)
-    relation = relation.public_send(kind) if kind
+    relation = relation.merge(kinds.map { |kind| Merchant.public_send(kind) }.reduce(:or)) if kinds.any?
     relation = relation.possibly_delivers_at_19 if flag?(:delivers_at_19)
     relation = relation.free_delivery(@budget) if flag?(:free_delivery)
     relation = relation.in_or_delivers_to_daan if flag?(:daan)

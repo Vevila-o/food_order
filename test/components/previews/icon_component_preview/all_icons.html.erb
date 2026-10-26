@@ -1,0 +1,5 @@
+<div class="flex gap-4">
+  <% IconComponent::PATHS.each_key do |name| %>
+    <div class="flex flex-col items-center gap-1 text-xs"><%= render IconComponent.new(name: name, size: 28) %><%= name %></div>
+  <% end %>
+</div>

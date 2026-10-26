@@ -1,16 +1,15 @@
 <% content_for :title, "預覽菜單 · #{@merchant.name}" %>
+<% content_for :header do %>
+  <%= render(PageHeaderComponent.new(title: "預覽菜單", subtitle: "#{@merchant.name} · 菜單日期 #{l(@menu_import.menu_date, format: :long)}")) do |header| %>
+    <% header.with_back_link { render BackLinkComponent.new(label: @merchant.name, href: merchant_path(@merchant)) } %>
+  <% end %>
+<% end %>
 
 <div class="max-w-2xl">
-  <h1 class="mb-1 text-2xl font-bold">預覽菜單</h1>
-  <p class="mb-4">
-    店家：<%= link_to @merchant.name, merchant_path(@merchant), class: "underline" %>　
-    菜單日期：<strong><%= l(@menu_import.menu_date, format: :long) %></strong>
-  </p>
-
-  <div class="mb-4 rounded-box bg-base-200 p-3">
+  <div class="mb-4 rounded-2xl bg-base-100 p-3">
     <table class="w-full text-left">
       <thead>
-        <tr class="text-sm opacity-80">
+        <tr class="text-sm text-muted">
           <th class="py-1">類別</th><th>品名</th><th class="text-right">價格</th><th class="text-right">處理</th>
         </tr>
       </thead>

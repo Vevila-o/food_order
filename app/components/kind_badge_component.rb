@@ -1,10 +1,6 @@
-# 店家類型標籤：餐＋飲（accent）/ 只有餐 / 僅飲料（secondary）。kind 來自 Merchant#kind。
+# 店家類型標籤：餐＋飲（accent 強調）/ 只有餐（soft）/ 僅飲料（secondary）。kind 來自 Merchant#kind。
 class KindBadgeComponent < ViewComponent::Base
-  STYLES = {
-    food_and_drink: "badge-accent",
-    food_only: "badge-ghost",
-    drink_only: "badge-secondary"
-  }.freeze
+  TONES = { food_and_drink: :accent, food_only: :soft, drink_only: :secondary }.freeze
 
   def initialize(kind:)
     @kind = kind.to_sym
@@ -12,5 +8,5 @@ class KindBadgeComponent < ViewComponent::Base
 
   def label = I18n.t("merchant_kind.#{@kind}")
 
-  def css_class = STYLES.fetch(@kind)
+  def tone = TONES.fetch(@kind)
 end

@@ -30,7 +30,7 @@ class MerchantCardComponentTest < ViewComponent::TestCase
 
     render_card(merchant)
 
-    assert_selector ".badge-accent", text: "餐＋飲"
+    assert_selector "span.bg-accent", text: "餐＋飲"
     assert_text "每人 NT$80–100"
   end
 
@@ -48,7 +48,7 @@ class MerchantCardComponentTest < ViewComponent::TestCase
   test "外送費未知顯示待確認，不是 0" do
     render_card(create(:merchant, delivery_fee: nil))
 
-    assert_selector "dd", text: "待確認", count: 2 # 19:00 外送與外送費都待確認
+    assert_selector "dd span.bg-secondary", text: "待確認", count: 2 # 19:00 外送與外送費都待確認
     assert_no_text "NT$0"
   end
 
@@ -73,19 +73,20 @@ class MerchantCardComponentTest < ViewComponent::TestCase
 
     render_card(merchant.reload)
 
-    assert_text I18n.l(Date.current - 3, format: :long)
-    assert_selector ".badge", text: "菜單有效"
+    assert_text "菜單 #{(Date.current - 3).strftime('%Y-%m')}"
+    assert_no_text "菜單可能過期" # 新鮮的菜單不重複放警示標籤
+    assert_no_text "日期不明"
   end
 
   test "過期或沒有菜單：標示菜單可能過期 / 日期不明" do
     stale = create(:merchant)
     create(:menu_item, :stale, merchant: stale)
     render_card(stale.reload)
-    assert_selector ".badge-warning", text: "菜單可能過期"
+    assert_selector "span.bg-secondary", text: "菜單可能過期"
 
     render_card(create(:merchant))
     assert_text "尚無菜單日期"
-    assert_selector ".badge-warning", text: "日期不明"
+    assert_selector "span.bg-secondary", text: "日期不明"
   end
 
   test "曾訂購圓點" do

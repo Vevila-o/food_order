@@ -1,4 +1,4 @@
-<div class="rounded-box bg-base-200 p-3" data-nested-form-row>
+<div class="rounded-xl bg-base-200 p-3" data-nested-form-row>
   <%= f.hidden_field :_destroy if f.object.persisted? %>
   <%= f.hidden_field :platform, value: f.object.platform.presence || "manual" %>
   <%= f.label :url, class: "mb-1 block text-sm font-medium" %>

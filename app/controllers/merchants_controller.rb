@@ -3,7 +3,8 @@ class MerchantsController < ApplicationController
 
   # 卡片列表 + 篩選。條件放在網址（filter[...]），可分享、開新分頁也保留。
   def index
-    @filter = MerchantFilter.new(filter_params, budget: Event.current&.total_budget)
+    @event = Event.current
+    @filter = MerchantFilter.new(filter_params, budget: @event&.total_budget)
     @merchants = @filter.merchants
     @total_count = Merchant.count
   end
@@ -54,7 +55,7 @@ class MerchantsController < ApplicationController
 
   # filter 不是 Hash（例如 ?filter=oops）時 permit 會把它丟掉，得到空條件，不會 500
   def filter_params
-    params.permit(filter: [ :kind, :sort, *MerchantFilter::FLAGS ])[:filter].to_h
+    params.permit(filter: [ :sort, *MerchantFilter::FLAGS, { kinds: [] } ])[:filter].to_h
   end
 
   def set_merchant

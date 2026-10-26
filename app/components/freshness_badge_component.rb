@@ -6,6 +6,6 @@ class FreshnessBadgeComponent < ViewComponent::Base
 
   def label = I18n.t("menu_freshness.#{@freshness}")
 
-  # 有效用低調的 ghost；過期與日期不明要醒目（warning）
-  def css_class = @freshness == :fresh ? "badge-ghost" : "badge-warning"
+  # 有效用低調的一般色；過期與日期不明要醒目（設計稿用 secondary 的「待確認」色）
+  def tone = @freshness == :fresh ? :base : :secondary
 end

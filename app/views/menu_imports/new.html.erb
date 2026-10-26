@@ -1,12 +1,15 @@
 <% content_for :title, "貼上菜單 · #{@merchant.name}" %>
+<% content_for :header do %>
+  <%= render(PageHeaderComponent.new(title: "貼上菜單", subtitle: @merchant.name)) do |header| %>
+    <% header.with_back_link { render BackLinkComponent.new(label: @merchant.name, href: merchant_path(@merchant)) } %>
+  <% end %>
+<% end %>
 
 <div class="max-w-2xl">
-  <h1 class="mb-1 text-2xl font-bold">貼上菜單</h1>
-  <p class="mb-4">店家：<%= link_to @merchant.name, merchant_path(@merchant), class: "underline" %></p>
 
   <%# 預覽頁是 POST 後直接渲染（不是 redirect），所以不用 Turbo 送出 %>
   <%= form_with model: @menu_import, scope: :menu_import, url: preview_merchant_menu_import_path(@merchant),
-        method: :post, class: "space-y-6", data: { turbo: false } do |f| %>
+        method: :post, class: "flex flex-col gap-3.5 rounded-2xl bg-base-100 p-4", data: { turbo: false } do |f| %>
     <% if @menu_import.errors.any? %>
       <%= render AlertComponent.new(type: :alert) do %>
         <div>
@@ -20,7 +23,7 @@
       <% end %>
     <% end %>
 
-    <p class="text-sm opacity-80">
+    <p class="text-sm text-muted">
       每行一個品項，品名後面接價格，例如「雞腿飯 90」、「紅茶：$30」、「排骨飯 85元」。
       解析不了的行會告訴你是第幾行，不會被默默略過。
     </p>

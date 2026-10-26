@@ -1,7 +1,7 @@
-<div class="rounded-box bg-base-200 p-6">
+<div class="rounded-2xl bg-base-100 p-6 shadow-sm">
   <p class="mb-1 text-lg font-bold"><%= @title %></p>
   <% if content.present? %>
-    <p class="mb-3"><%= content %></p>
+    <p class="mb-3 text-muted"><%= content %></p>
   <% end %>
   <% if action? %>
     <div class="flex flex-wrap gap-2"><%= action %></div>

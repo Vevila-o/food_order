@@ -17,7 +17,7 @@ class PriceEstimateComponent < ViewComponent::Base
   end
 
   # 估價未填時用較淡的字，提醒資料還不完整
-  def css_class = text == "估價未填" ? "opacity-70" : "font-medium"
+  def css_class = text == "估價未填" ? "text-muted" : "font-medium"
 
   private
 

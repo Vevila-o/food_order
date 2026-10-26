@@ -131,7 +131,7 @@ class MenuImportsControllerTest < ActionDispatch::IntegrationTest
     post merchant_menu_import_path(@merchant), params: import_params(menu_date: (Date.current - 200).to_s)
 
     get merchant_path(@merchant)
-    assert_select ".badge-warning", text: "菜單可能過期"
+    assert_select "span.bg-secondary", text: "菜單可能過期"
   end
 
   test "menu_import 參數不是 Hash 時不會報錯" do

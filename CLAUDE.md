@@ -81,9 +81,9 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 ### 非標準目錄
 
 - `app/services/` — 商業邏輯（`OrderPricing`、`EventBudget`、Basic Auth 憑證等）
-- `app/components/` — ViewComponent UI 元件（卡片、標籤、圓點、表單欄位、導覽列等**共用 UI 一律做成元件**，不用 helper / partial）。每個元件必須在 `test/components/previews/` 有 Lookbook 預覽，並有 `test/components/*_test.rb`；`PreviewsTest` 會檢查「每個元件都有預覽」與「所有預覽都能渲染」。預覽用的假資料見 `PreviewMerchants`（只在記憶體建立，不寫資料庫）。
+- `app/components/` — ViewComponent UI 元件（`PageHeader`、`MerchantCard`、`FilterBar`、`EventSummary`、`Pill`、`Icon`、`EmptyState`、`Field` 等**共用 UI 一律做成元件**，不用 helper / partial）。每個元件必須在 `test/components/previews/` 有 Lookbook 預覽，並有 `test/components/*_test.rb`；`PreviewsTest` 會檢查「每個元件都有預覽」與「所有預覽都能渲染」。預覽用的假資料見 `PreviewMerchants`（只在記憶體建立，不寫資料庫）。
 - `app/helpers/` — 只放純文字格式化（`enum_text`、`format_money`、`delivery_fee_text` 等），不放 UI 標記
-- `app/services/merchant_filter.rb` — 首頁篩選與排序（網址 `filter[...]`）。規則：19:00 外送「待確認也顯示」；每人 ≤ NT$100「估價沒填仍顯示」；免外送費「只算外送費明確為 0 或滿額門檻 ≤ 本場預算，未知不算」；預設排序收藏優先再依最近更新。不認得的參數值一律忽略。controller 用 `params.permit(filter: [...])[:filter].to_h`（`fetch(:filter, {})` 的預設值會變成未 permit 的 Parameters 而報錯）。
+- `app/services/merchant_filter.rb` — 首頁篩選與排序（網址 `filter[kinds][]`（可複選，OR）、`filter[sort]`、`filter[<旗標>]=1`）。規則：19:00 外送「待確認也顯示」；每人 ≤ NT$100「估價沒填仍顯示」；免外送費「只算外送費明確為 0 或滿額門檻 ≤ 本場預算，未知不算」；預設排序收藏優先再依最近更新。不認得的參數值一律忽略。controller 用 `params.permit(filter: [ :sort, *FLAGS, { kinds: [] } ])[:filter].to_h`（`fetch(:filter, {})` 的預設值會變成未 permit 的 Parameters 而報錯）。
 - `app/services/menu_text_parser.rb`、`app/models/menu_import.rb` — 貼上菜單：解析 → 預覽 → 確認才寫入（確認時重新解析）
 - `app/validators/` — 自訂驗證（`HttpsUrlValidator`：只允許 https、擋內網 IP）
 - `test/factories/` — FactoryBot 定義，測試用 `create(:merchant, :drink_only)` 建資料，不用 fixtures
@@ -95,7 +95,7 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 
 ### 前端
 
-- **Stimulus**（`app/javascript/controllers`）：`nested-form`（動態新增 / 移除巢狀列）、`auto-submit`（桌機篩選變更即送出）、`dialog`（手機篩選抽屜）、`detail-link`（桌機開新分頁、手機與 iOS 獨立模式同分頁）。
+- **Stimulus**（`app/javascript/controllers`）：`nested-form`（動態新增 / 移除巢狀列）、`auto-submit`（篩選膠囊變更即送出）、`dialog`（「更多篩選」抽屜）、`detail-link`（桌機開新分頁、手機與 iOS 獨立模式同分頁）。
 - **Turbo Frame**：首頁列表在 `turbo-frame#merchant-list`，篩選表單 `data-turbo-frame` 指向它並 `turbo_action: advance` 更新網址；frame 內的連結要加 `data-turbo-frame="_top"` 才會跳出 frame。
 - **CSP**：不可使用 inline `style="..."`（`style-src 'self'`），要用 Tailwind class（例如 `pb-[calc(0.5rem+env(safe-area-inset-bottom))]`）。
 - **ViewComponent + Lookbook**：開發環境開 http://localhost:3000/lookbook 預覽所有元件（Lookbook 只裝在 development 群組，正式環境沒有；其介面需要 inline script，所以只對 Lookbook 自己的 controller 關閉 CSP，見 `config/initializers/lookbook.rb`）。
@@ -108,17 +108,29 @@ Rails 單體，所有外部 API 只在伺服器端背景工作呼叫，瀏覽器
 
 ### UI 規範
 
-| 色碼 | daisyUI 變數 | 用途 |
-| --- | --- | --- |
-| `#5EBDB7` | `--color-primary` | 主要按鈕、已選篩選標籤 |
-| `#B2D7DB` | `--color-base-200` | 卡片背景、區塊底色 |
-| `#F0AE33` | `--color-accent` | 收藏星號、「餐+飲」標籤、倒數提醒 |
-| `#F1CCB7` | `--color-secondary` | 候選名單標籤、次要按鈕 |
-| `#D98C6E` | `--color-warning` | 超出預算、菜單過期、人數變動提示 |
+視覺依設計稿「Ruby Jam 訂餐助手 介面設計」（iOS 首頁 / 詳情 / 訂單詢問產生器、桌機首頁 四個畫板）。設計稿與規格書 8.1 不同處**以設計稿為準**：頁面底色 `#F4F9F9`、卡片白色，`#B2D7DB` 只用在活動摘要卡與「只有餐」標籤。
 
-- 色票偏淺：按鈕與標籤文字一律用深色 `#1F3B3A`，內文底白色（WCAG AA 4.5:1）。
-- iOS：`viewport-fit=cover` + `env(safe-area-inset-*)`；輸入框字級 ≥ 16px；可點擊元素 ≥ 44×44；手機版篩選放底部抽屜；提供 PWA manifest。
+| 色碼 | 變數 / class | 用途 |
+| --- | --- | --- |
+| `#5EBDB7` | `primary` | 主要按鈕、已選膠囊 |
+| `#F4F9F9` | `base-200` | 頁面底色、列表分隔 |
+| `#FFFFFF` | `base-100` | 卡片、頁首 |
+| `#DCEDEE` | `base-300` | 細線、邊框 |
+| `#B2D7DB` | `soft` | 活動摘要卡、「只有餐」標籤、膠囊邊框 |
+| `#F0AE33` | `accent` | 「餐＋飲」標籤、曾訂購圓點、建議搭配邊框 |
+| `#F1CCB7` | `secondary` | 「待確認」「菜單可能過期」「僅飲料」標籤 |
+| `#D98C6E` | `warning` | 超出預算、需調整訂餐提示（文字 `#2A140B`） |
+| `#4E6463` | `muted` | 輔助文字（白底 6.3:1；**不要放在 `soft` 上**，只有 4.1:1） |
+
+- 文字一律深色（`#14302F`，warning 上用 `#2A140B`），對比 ≥ 4.5:1。設計稿的 `#6A7C7B`（4.39:1）不合格，已改用 `muted`。
+- 字型用系統字型（PingFang TC → Noto Sans TC → 無襯線），**不載入 Google Fonts**（CSP 只允許自己的網域）。
+- **daisyUI 自訂 theme 必須定義 `--border`、`--depth`、`--noise`、`--size-field`、`--size-selector`**：少了的話 `.btn` 會變成瀏覽器預設的 3px 粗黑框、元件尺寸也會跑掉，而且不會報錯（`test/assets/theme_test.rb` 檢查）。
+- 頁面結構：每頁用 `content_for :header` 放 `PageHeaderComponent`（沒有全站導覽列），內容用 `page-container`（手機 20px、桌機 32px 邊距，最寬 1360px）。
+- 版面規則：可點擊元素 ≥ 44×44（膠囊用 `min-h-11`）；手機篩選用橫向膠囊列 + 「更多篩選」抽屜；隱藏的 checkbox（`sr-only` 是絕對定位）的外層 label 要 `relative`，否則會跑出捲動區而撐寬整個頁面（手機會左右晃動）。
+- iOS：`viewport-fit=cover` + `env(safe-area-inset-*)`；輸入框字級 ≥ 16px；提供 PWA manifest。
 - 複製按鈕：同一個 Stimulus click handler 內先 `navigator.clipboard.writeText`，成功顯示「已複製」再 `window.location.href` 開連結；失敗不跳轉，改為反白文字供手動複製。
+- **改畫面後要看實際截圖**：`node script/screenshot.mjs <網址> <輸出.png> 390 844 mobile`（會印出 scrollWidth / clientWidth，兩者不同就是橫向溢出）。測試抓不到版面問題（例如粗黑框、橫向溢出）。
+- 設計稿尚未涵蓋、由我們依其視覺語言補上的：曾訂購圓點、「僅飲料」標籤、新增店家入口（首頁右上角「＋」）、更多篩選抽屜。設計稿有但目前不做的：地圖（M5）、設定齒輪（M2-d）、「每日 06:00 更新」（M5）。
 
 ### 國際化
 
