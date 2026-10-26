@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_27_000024) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_27_000025) do
   create_table "app_settings", force: :cascade do |t|
     t.boolean "singleton", default: true, null: false
     t.string "delivery_place_name"
@@ -151,6 +151,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_27_000024) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "order_group_id"
+    t.boolean "message_edited", default: false, null: false
     t.index ["event_id", "merchant_id"], name: "index_order_inquiries_on_event_id_and_merchant_id", unique: true
     t.index ["event_id"], name: "index_order_inquiries_on_event_id"
     t.index ["merchant_id"], name: "index_order_inquiries_on_merchant_id"

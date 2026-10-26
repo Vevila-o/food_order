@@ -328,4 +328,22 @@ class InquiryPairTest < ActiveSupport::TestCase
     assert_equal 2, result.size
     assert_equal result.first.order_group, result.last.order_group
   end
+
+  test "兩家：各自的編輯各自存，用店家 id 對應" do
+    result = InquiryPair.new(event: @event, merchant: @meal_shop, partner_id: @drink_shop.id.to_s, quantities: both(meal: 2, drink: 3),
+                             message_edits: { @drink_shop.id.to_s => "給飲料店的自訂訊息" }).save
+
+    meal_inquiry, drink_inquiry = result
+    assert_not meal_inquiry.message_edited?
+    assert_includes meal_inquiry.message_text, "- 雞腿便當 × 2 份"
+    assert drink_inquiry.message_edited?
+    assert_equal "給飲料店的自訂訊息", drink_inquiry.message_text
+  end
+
+  test "message_edits 的鍵是數字也可以" do
+    result = InquiryPair.new(event: @event, merchant: @meal_shop, partner_id: "", quantities: both(meal: 2, drink: 0),
+                             message_edits: { @meal_shop.id => "自訂" }).save
+
+    assert_equal "自訂", result.first.message_text
+  end
 end

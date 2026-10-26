@@ -319,6 +319,69 @@ module Merchants
       ActionController::Base.allow_forgery_protection = original
     end
 
+    # --- 手動編輯訊息 ---
+
+    test "訊息區有複製與編輯（鉛筆）按鈕、隱藏的編輯區" do
+      get merchant_inquiry_path(@merchant, quantities: { @food.id => 2 })
+
+      assert_select "section button[aria-label=複製訊息][title=複製訊息][data-action='inquiry#copyOnly'] svg"
+      assert_select "section button[aria-label=編輯訊息][title=編輯訊息][data-action='inquiry#editMessage'] svg"
+      assert_select "div[data-message-editor][hidden] textarea[maxlength='2000']"
+      assert_select "button[data-action='inquiry#finishEdit']", text: /完成/
+      assert_select "button[data-action='inquiry#cancelEdit']", text: "取消"
+      assert_select "pre[data-edited]", count: 0
+    end
+
+    test "儲存帶編輯過的訊息：存成這張詢問單的訊息並標記已編輯，重新打開顯示改過的版本與已編輯標籤" do
+      post merchant_inquiry_path(@merchant), params: { quantities: { @food.id => 2 }, message_edits: { @merchant.id => "自訂訊息 <b>粗體</b>" } }
+
+      assert_response :success
+      inquiry = OrderInquiry.last
+      assert inquiry.message_edited?
+      assert_equal "自訂訊息 <b>粗體</b>", inquiry.message_text
+
+      get merchant_inquiry_path(@merchant)
+      assert_select "pre[data-edited]", text: "自訂訊息 <b>粗體</b>" # 內容會跳脫
+      assert_select "b", count: 0
+      assert_select "h2 span", text: "已編輯"
+    end
+
+    test "改了數量：重新產生訊息，不再是已編輯" do
+      post merchant_inquiry_path(@merchant), params: { quantities: { @food.id => 2 }, message_edits: { @merchant.id => "自訂訊息" } }
+
+      get merchant_inquiry_path(@merchant, quantities: { @food.id => 5 })
+
+      assert_select "pre", text: /× 5 份/
+      assert_select "pre[data-edited]", count: 0
+      assert_select "h2 span", text: "已編輯", count: 0
+    end
+
+    test "訊息超過 2000 字：422，不儲存" do
+      assert_no_difference "OrderInquiry.count" do
+        post merchant_inquiry_path(@merchant), params: { quantities: { @food.id => 2 }, message_edits: { @merchant.id => "字" * 2001 } }
+      end
+
+      assert_response :unprocessable_content
+      assert_includes response.parsed_body["errors"], "訊息最多 2000 字"
+    end
+
+    test "message_edits 不是 Hash 或內容不是字串：忽略，不報錯" do
+      post merchant_inquiry_path(@merchant), params: { quantities: { @food.id => 2 }, message_edits: "oops" }
+      assert_response :success
+
+      post merchant_inquiry_path(@merchant), params: { quantities: { @food.id => 2 }, message_edits: { @merchant.id => [ "x" ] } }
+      assert_response :success
+      assert_not OrderInquiry.last.message_edited?
+    end
+
+    test "按聯絡按鈕時帶編輯：訊息與標記一起存" do
+      post merchant_inquiry_path(@merchant), params: { quantities: { @food.id => 2 }, channel: "line", message_edits: { @merchant.id => "要複製出去的訊息" } }
+
+      inquiry = OrderInquiry.last
+      assert inquiry.sent?
+      assert_equal "要複製出去的訊息", inquiry.message_text
+    end
+
     # --- 入口與存取保護 ---
 
     test "店家詳情頁底部有訂單詢問產生器入口" do

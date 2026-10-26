@@ -1,7 +1,37 @@
 <section class="flex flex-col gap-2 rounded-2xl bg-base-100 p-4" aria-label="<%= title %>">
-  <h2 class="text-base font-bold"><%= title %></h2>
+  <div class="flex items-center justify-between gap-2">
+    <h2 class="flex flex-wrap items-center gap-2 text-base font-bold">
+      <%= title %>
+      <% if edited? %><%= render(PillComponent.new(tone: :soft)) { "已編輯" } %><% end %>
+    </h2>
+    <div class="flex items-center gap-1" data-message-toolbar>
+      <button type="button" class="<%= icon_button_class %>" title="複製訊息" aria-label="複製訊息"
+              data-action="inquiry#copyOnly" data-inquiry-message-id-param="<%= dom_id %>">
+        <%= render IconComponent.new(name: :copy, size: 20) %>
+      </button>
+      <button type="button" class="<%= icon_button_class %>" title="編輯訊息" aria-label="編輯訊息"
+              data-action="inquiry#editMessage" data-inquiry-message-id-param="<%= dom_id %>">
+        <%= render IconComponent.new(name: :pencil, size: 20) %>
+      </button>
+    </div>
+  </div>
   <% if notice %>
     <p class="rounded-xl bg-warning-soft px-3 py-2 text-sm font-medium" role="note"><%= notice %></p>
   <% end %>
-  <pre id="<%= dom_id %>" tabindex="0" class="whitespace-pre-wrap break-words rounded-xl bg-base-200 p-3 font-sans text-[15px] leading-relaxed select-all" data-inquiry-message><%= text %></pre>
+  <pre id="<%= dom_id %>" tabindex="0" class="whitespace-pre-wrap break-words rounded-xl bg-base-200 p-3 font-sans text-[15px] leading-relaxed select-all"
+       data-inquiry-message<%= %( data-merchant-id="#{merchant_id}").html_safe if merchant_id %><%= " data-edited" if edited? %>><%= text %></pre>
+
+  <%# 編輯區（平常隱藏）：改完按「完成」儲存；文字框沒有 name，不會被數量表單帶出去 %>
+  <div class="flex flex-col gap-2" hidden data-message-editor>
+    <label for="<%= editor_id %>" class="sr-only"><%= title %>（編輯）</label>
+    <textarea id="<%= editor_id %>" rows="10" maxlength="<%= InquiryForm::MAX_MESSAGE_LENGTH %>" class="textarea w-full text-[16px] leading-relaxed"></textarea>
+    <p class="text-sm text-muted">改了品項或數量，訊息會重新產生，編輯過的內容會被取代。</p>
+    <div class="flex flex-wrap gap-2">
+      <button type="button" class="btn btn-primary btn-sm" data-action="inquiry#finishEdit" data-inquiry-message-id-param="<%= dom_id %>">
+        <%= render IconComponent.new(name: :check, size: 18) %>完成
+      </button>
+      <button type="button" class="btn btn-ghost btn-sm" data-action="inquiry#cancelEdit" data-inquiry-message-id-param="<%= dom_id %>">取消</button>
+    </div>
+  </div>
+  <p class="text-sm font-medium" role="status" aria-live="polite" data-inquiry-status></p>
 </section>

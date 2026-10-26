@@ -11,6 +11,11 @@ class MessagePreviewComponentPreview < ViewComponent::Preview
     render MessagePreviewComponent.new(text: TEXT)
   end
 
+  # 手動改過的版本：標題旁有「已編輯」
+  def edited
+    render MessagePreviewComponent.new(text: "您好，想訂 18 個便當，麻煩了！", merchant_id: 1, edited: true)
+  end
+
   # 活動日期已過：訊息旁多一行提醒
   def date_passed
     render MessagePreviewComponent.new(text: TEXT, notice: "活動日期 10/27 已過，請確認日期再送出")
