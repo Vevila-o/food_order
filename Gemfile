@@ -76,6 +76,6 @@ gem "maintenance_tasks", "~> 2.17"
 
 gem "sqlite3", ">= 2.1"
 
-gem "view_component", "~> 4.19"
+gem "view_component", "~> 4.24"
 
 gem "lookbook", "~> 2.3", group: :development
